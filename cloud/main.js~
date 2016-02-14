@@ -1,0 +1,19 @@
+
+// Use Parse.Cloud.define to define as many cloud functions as you want.
+// For example:
+Parse.Cloud.define("hello", function(request, response) {
+  response.success("Hello world!");
+});
+
+
+Parse.Cloud.define("joinChatRoom", function(request, response) {
+    var query = new Parse.Query("ChatRoom");
+    query.equalTo("maxOccupancy", request.params.maxOccupancy);
+    query.include("activeAliases");
+
+});
+
+// Add a User to a ChatRoom, create the proper Alias as well.
+function addToChatRoom(user, chatRoom, response) {
+
+}

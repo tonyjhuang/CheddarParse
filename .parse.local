@@ -1,0 +1,10 @@
+{
+  "applications": {
+    "Cheddar": {
+      "applicationId": "tzuRtC3yGeR9js54uTpe0rAAeuYLNrldzrLy1sEG"
+    },
+    "_default": {
+      "link": "Cheddar"
+    }
+  }
+}
