@@ -21,7 +21,7 @@ Parse.Cloud.define("joinChatRoom", function(request, response) {
     checkMissingParams(request.params, ["userId", "maxOccupancy"], response);
     getNextAvailableChatRoom(request.params.userId, request.params.maxOccupancy, {
         success: function(chatRoom) {
-            addToChatRoom(request.params.userId, chatRoom, getAliasName(), response);
+            addToChatRoom(request.params.userId, chatRoom.id, getAliasName(), response);
         },
         error: response.error
     });
@@ -33,6 +33,58 @@ Parse.Cloud.define("getNextAvailableChatRoom", function(request, response) {
     getNextAvailableChatRoom(request.params.userId, request.params.maxOccupancy, response);
 });
 
+// Takes: {userId: string, chatRoomId: string}
+// Returns: {alias: Alias}
+Parse.Cloud.define("leaveChatRoom", function(request, response) {
+    checkMissingParams(request.params, ["userId", "chatRoomId"], response);
+    var aliasQuery = new Parse.Query("Alias");
+    aliasQuery.equalTo("userId", request.params.userId);
+    aliasQuery.equalTo("chatRoomId", request.params.chatRoomId);
+    aliasQuery.first({
+        success: function(alias) {
+            alias.set("active", false);
+            alias.save(null, {
+               success: function(alias) {
+                   decrementChatRoomOccupants(request.params.chatRoomId, {
+                       success: function(chatRoom) {
+                           response.success({"alias": alias, "chatRoom": chatRoom});
+                       },
+                       error: response.error
+                   });
+               }, 
+               error: response.error
+            });
+        },
+        error: response.error
+    });
+});
+
+function decrementChatRoomOccupants(chatRoomId, response) {
+    var ChatRoom = Parse.Object.extend("ChatRoom");
+    var query = new Parse.Query(ChatRoom);
+    query.equalTo("objectId", chatRoomId);
+    query.first({
+        success: function(chatRoom) {
+           chatRoom.increment("numOccupants", -1);
+           chatRoom.save(null, response);
+        },
+        error: response.error
+   });
+}
+
+function incrementChatRoomOccupants(chatRoomId, response) {
+    var ChatRoom = Parse.Object.extend("ChatRoom");
+    var query = new Parse.Query(ChatRoom);
+    query.equalTo("objectId", chatRoomId);
+    query.first({
+        success: function(chatRoom) {
+           chatRoom.increment("numOccupants");
+           chatRoom.save(null, response);
+        },
+        error: response.error
+   });
+}
+
 // Generates a random nickname for the user.
 function getAliasName() {
     return adjectives.random() + " " + animals.random();
@@ -40,19 +92,18 @@ function getAliasName() {
 
 // Note: Takes a ChatRoom object, not an ObjectId.
 // Returns: {"alias": Alias, "chatRoom": ChatRoom}
-function addToChatRoom(userId, chatRoom, aliasName, response) {
+function addToChatRoom(userId, chatRoomId, aliasName, response) {
     var Alias = Parse.Object.extend("Alias");
     var alias = new Alias();
 
     alias.set("name", aliasName);
     alias.set("active", true);
     alias.set("userId", userId);
-    alias.set("chatRoomId", chatRoom.id);
+    alias.set("chatRoomId", chatRoomId);
     
     alias.save(null, {
         success: function(alias) {
-            chatRoom.increment("numOccupants");
-            chatRoom.save(null, {
+            incrementChatRoomOccupants(chatRoomId, {
                 success: function(chatRoom) {
                     response.success({"alias": alias, "chatRoom": chatRoom});
                 },
