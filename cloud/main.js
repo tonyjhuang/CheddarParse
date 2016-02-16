@@ -1,8 +1,19 @@
+/*
+curl -X POST \
+ -H "X-Parse-Application-Id: ${APPLICATION_ID}" \
+ -H "X-Parse-REST-API-Key: ${REST_API_KEY}" \
+ -H "Content-Type: application/json" \
+ -d '{}' \
+ https://api.parse.com/1/functions/hello
+*/
+
+var adjectives = require('cloud/adjectives.js');
+var animals = require('cloud/animals.js');
 
 // Use Parse.Cloud.define to define as many cloud functions as you want.
 // For example:
 Parse.Cloud.define("hello", function(request, response) {
-  response.success("Hello world!!");
+    response.success(getAliasName());
 });
 
 // Takes: {userId: string, maxOccupancy: int}
@@ -24,7 +35,7 @@ Parse.Cloud.define("getNextAvailableChatRoom", function(request, response) {
 
 // Generates a random nickname for the user.
 function getAliasName() {
-    return "TestAlias";
+    return adjectives.random() + " " + animals.random();
 }
 
 // Note: Takes a ChatRoom object, not an ObjectId.
