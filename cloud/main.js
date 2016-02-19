@@ -18,17 +18,36 @@ Parse.Cloud.define("hello", function(request, response) {
 });
 
 Parse.Cloud.define("sendMessage", function(request, response) {
-    var requiredParams = ["userId", "chatRoomId", "pubkey", "subkey", "message"];
+    var requiredParams = ["userId", "chatRoomId", "pubkey", "subkey", "body"];
     checkMissingParams(request.params, requiredParams, response);
-    var message = {"body": request.params.message};
+    var message = {"body": request.params.body};
     var params = request.params;
     pubnub.sendMessage(params.pubkey, params.subkey, params.chatRoomId,
                        message).then(function(httpResponse) {
-                               response.success(httpResponse);
-                           }, function(httpResponse) {
-                               response.error(httpResponse);
-                           });
+                           saveMessage(request.params.userId,
+                                       request.params.chatRoomId,
+                                       request.params.body,
+                                       response);
+                       }, function(httpResponse) {
+                           response.error(httpResponse);
+                       });
 });
+
+function saveMessage(userId, chatRoomId, body, response) {
+    var Message = Parse.Object.extend("Message");
+    var message = new Message();
+
+    message.set("userId", userId);
+    message.set("chatRoomId", chatRoomId);
+    message.set("body", body);
+
+    message.save(null, {
+        success: response.success,
+        error: function(message, error) {
+            response.error(error);
+        }
+    });
+}
 
 // Takes: {userId: string, maxOccupancy: int}
 Parse.Cloud.define("joinChatRoom", function(request, response) {
