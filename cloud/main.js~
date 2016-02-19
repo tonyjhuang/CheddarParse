@@ -9,25 +9,11 @@ curl -X POST \
 
 var adjectives = require('cloud/adjectives.js');
 var animals = require('cloud/animals.js');
-var pubnub = require('cloud/pubnub.js');
 
 // Use Parse.Cloud.define to define as many cloud functions as you want.
 // For example:
 Parse.Cloud.define("hello", function(request, response) {
     response.success(getAliasName());
-});
-
-Parse.Cloud.define("sendMessage", function(request, response) {
-    var requiredParams = ["userId", "chatRoomId", "pubkey", "subkey", "message"];
-    checkMissingParams(request.params, requiredParams, response);
-    var message = {"body": request.params.message};
-    var params = request.params;
-    pubnub.sendMessage(params.pubkey, params.subkey, params.chatRoomId,
-                       message).then(function(httpResponse) {
-                               response.success(httpResponse);
-                           }, function(httpResponse) {
-                               reponse.error(httpResponse);
-                           });
 });
 
 // Takes: {userId: string, maxOccupancy: int}

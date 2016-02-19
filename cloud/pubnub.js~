@@ -1,0 +1,13 @@
+
+
+
+function sendMessage(pubkey, channel, message) {
+    var url = getSendMessageUrl(pubkey, channel, message);
+    Parse.Cloud.httpRequest({
+       url: url
+    });
+}
+
+function getSendMessageUrl(pubkey, channel, message) {
+    
+}
