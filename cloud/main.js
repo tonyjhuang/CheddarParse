@@ -26,7 +26,7 @@ Parse.Cloud.define("sendMessage", function(request, response) {
                        message).then(function(httpResponse) {
                                response.success(httpResponse);
                            }, function(httpResponse) {
-                               reponse.error(httpResponse);
+                               response.error(httpResponse);
                            });
 });
 
