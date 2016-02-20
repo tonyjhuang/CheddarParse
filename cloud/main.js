@@ -36,7 +36,8 @@ Parse.Cloud.define("sendMessage", function(request, response) {
 Parse.Cloud.define("registerNewUser", function(request, response) {
     getUserCount(function(userCount) {
         if (userCount == undefined) {
-            response.error;
+            response.error();
+            return;
         }
 
         var user = new Parse.User();
@@ -68,7 +69,7 @@ function incrementUserCount(response, successCallback) {
                     successCallback();
                 },
                 error: function(object,error) {
-                    response.error;
+                    response.error();
                 }
             });
         },
