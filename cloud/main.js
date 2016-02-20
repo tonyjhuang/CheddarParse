@@ -35,11 +35,6 @@ Parse.Cloud.define("sendMessage", function(request, response) {
 
 Parse.Cloud.define("registerNewUser", function(request, response) {
     getUserCount(function(userCount) {
-        if (userCount == undefined) {
-            response.error();
-            return;
-        }
-
         var user = new Parse.User();
         user.set('password', 'password');
         user.set('username', (userCount + 1).toString());
@@ -50,10 +45,12 @@ Parse.Cloud.define("registerNewUser", function(request, response) {
                     response.success(user);
                 });
             },
-            error: function(message, error) {
+            error: function(user, error) {
                 response.error(error);
             }
         });
+    }, function(error) {
+        response.error(error);
     });
 });
 
@@ -68,27 +65,27 @@ function incrementUserCount(response, successCallback) {
                 success: function(userCount) {
                     successCallback();
                 },
-                error: function(object,error) {
+                error: function(userCount,error) {
                     response.error();
                 }
             });
         },
-        error: function(object,error) {
+        error: function(userCount,error) {
             response.error(error);
         }
     });
 }
 
-function getUserCount(callback) {
+function getUserCount(successCallback, errorCallback) {
     var UserCount = Parse.Object.extend("UserCount");
     var userCountQuery = new Parse.Query(UserCount);
 
     userCountQuery.get("SqRF3QUGsM", { 
         success: function(userCount) {
-            callback(userCount.get("count"));
+            successCallback(userCount.get("count"));
         },
-        error: function(object,error) {
-            callback(undefined);
+        error: function(userCount,error) {
+            errorCallback(error);
         }
     });
 }
