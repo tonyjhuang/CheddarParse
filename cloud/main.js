@@ -33,6 +33,21 @@ Parse.Cloud.define("sendMessage", function(request, response) {
                        });
 });
 
+Parse.Cloud.define("registerNewUser", function(request, response) {
+    var user = new Parse.User();
+    user.set('password', 'password');
+    user.set('username', 'username');
+
+    user.save(null, {
+        success: function(user) {
+            response.success({"user": user});
+        },
+        error: function(message, error) {
+            response.error(error);
+        }
+    });
+});
+
 function saveMessage(userId, chatRoomId, body, response) {
     var Message = Parse.Object.extend("Message");
     var message = new Message();
