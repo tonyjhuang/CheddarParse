@@ -20,7 +20,10 @@ Parse.Cloud.define("hello", function(request, response) {
 Parse.Cloud.define("sendMessage", function(request, response) {
     var requiredParams = ["userId", "chatRoomId", "pubkey", "subkey", "body"];
     checkMissingParams(request.params, requiredParams, response);
-    var message = {"body": request.params.body};
+    var message = {"body": request.params.body, 
+                   "userId": request.params.userId, 
+                   "chatRoomId": request.params.chatRoomId};
+
     var params = request.params;
     pubnub.sendMessage(params.pubkey, params.subkey, params.chatRoomId,
                        message).then(function(httpResponse) {
@@ -40,7 +43,7 @@ Parse.Cloud.define("registerNewUser", function(request, response) {
 
     user.save(null, {
         success: function(user) {
-            response.success({"user": user});
+            response.success(user);
         },
         error: function(message, error) {
             response.error(error);
