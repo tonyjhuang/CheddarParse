@@ -35,6 +35,10 @@ Parse.Cloud.define("sendMessage", function(request, response) {
 
 Parse.Cloud.define("registerNewUser", function(request, response) {
     getUserCount(function(userCount) {
+        if (userCount == undefined) {
+            response.error;
+        }
+
         var user = new Parse.User();
         user.set('password', 'password');
         user.set('username', (userCount + 1).toString());
