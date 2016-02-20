@@ -21,7 +21,6 @@ Parse.Cloud.define("sendMessage", function(request, response) {
     var requiredParams = ["userId", "chatRoomId", "pubkey", "subkey", "body"];
     checkMissingParams(request.params, requiredParams, response);
     var message = {"body": request.params.body};
-
     var params = request.params;
     pubnub.sendMessage(params.pubkey, params.subkey, params.chatRoomId,
                        message).then(function(httpResponse) {
