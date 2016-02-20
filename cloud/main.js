@@ -37,19 +37,59 @@ Parse.Cloud.define("sendMessage", function(request, response) {
 });
 
 Parse.Cloud.define("registerNewUser", function(request, response) {
-    var user = new Parse.User();
-    user.set('password', 'password');
-    user.set('username', 'username');
+    getUserCount(function(userCount) {
+        var user = new Parse.User();
+        user.set('password', 'password');
+        user.set('username', (userCount + 1).toString());
 
-    user.save(null, {
-        success: function(user) {
-            response.success(user);
+        user.save(null, {
+            success: function(user) {
+                incrementUserCount(response, function() {
+                    response.success(user);
+                });
+            },
+            error: function(message, error) {
+                response.error(error);
+            }
+        });
+    });
+});
+
+function incrementUserCount(response, successCallback) {
+    var UserCount = Parse.Object.extend("UserCount");
+    var userCountQuery = new Parse.Query(UserCount);
+
+    userCountQuery.get("SqRF3QUGsM", {  
+        success: function(userCount) {
+            userCount.increment('count');
+            userCount.save(null, {
+                success: function(userCount) {
+                    successCallback();
+                },
+                error: function(object,error) {
+                    response.error;
+                }
+            });
         },
-        error: function(message, error) {
+        error: function(object,error) {
             response.error(error);
         }
     });
-});
+}
+
+function getUserCount(callback) {
+    var UserCount = Parse.Object.extend("UserCount");
+    var userCountQuery = new Parse.Query(UserCount);
+
+    userCountQuery.get("SqRF3QUGsM", { 
+        success: function(userCount) {
+            callback(userCount.get("count"));
+        },
+        error: function(object,error) {
+            callback(undefined);
+        }
+    });
+}
 
 function saveMessage(userId, chatRoomId, body, response) {
     var Message = Parse.Object.extend("Message");
