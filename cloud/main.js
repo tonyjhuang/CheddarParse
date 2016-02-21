@@ -33,6 +33,71 @@ Parse.Cloud.define("sendMessage", function(request, response) {
                        });
 });
 
+Parse.Cloud.define("registerNewUser", function(request, response) {
+    getUserCount(function(userCount) {
+        var user = new Parse.User();
+        user.set('password', 'password');
+        user.set('username', (userCount + 1).toString());
+
+        user.save(null, {
+            success: function(user) {
+                response.success(user);
+            },
+            error: function(user, error) {
+                response.error(error);
+            }
+        });
+    }, function(error) {
+        response.error(error);
+    });
+});
+
+
+Parse.Cloud.afterSave(Parse.User, function(request) { 
+    if (request.object.existed()) {
+        return;
+    }
+
+    Parse.Cloud.useMasterKey();
+    incrementUserCount();
+});
+
+function incrementUserCount() {
+    var UserCount = Parse.Object.extend("UserCount");
+    var userCountQuery = new Parse.Query(UserCount);
+
+    userCountQuery.get("SqRF3QUGsM", {  
+        success: function(userCount) {
+            userCount.increment('count');
+            userCount.save(null, {
+                success: function(userCount) {
+                    // success
+                },
+                error: function(userCount,error) {
+                    console.error("error: " + error.code + " : " error.message);
+                }
+            });
+        },
+        error: function(userCount,error) {
+            console.error("error: " + error.code + " : " error.message);
+        }
+    });
+}
+
+function getUserCount(successCallback, errorCallback) {
+    var UserCount = Parse.Object.extend("UserCount");
+    var userCountQuery = new Parse.Query(UserCount);
+
+    userCountQuery.get("SqRF3QUGsM", { 
+        success: function(userCount) {
+            successCallback(userCount.get("count"));
+        },
+        error: function(userCount,error) {
+            errorCallback(error);
+        }
+    });
+}
+
 function saveMessage(userId, chatRoomId, body, response) {
     var Message = Parse.Object.extend("Message");
     var message = new Message();
