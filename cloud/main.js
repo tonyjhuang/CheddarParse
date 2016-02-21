@@ -41,7 +41,7 @@ Parse.Cloud.define("registerNewUser", function(request, response) {
 
         user.save(null, {
             success: function(user) {
-                incrementUserCount(user, response);
+                response.success(user);
             },
             error: function(user, error) {
                 response.error(error);
@@ -52,7 +52,17 @@ Parse.Cloud.define("registerNewUser", function(request, response) {
     });
 });
 
-function incrementUserCount(newUser, response) {
+
+Parse.Cloud.afterSave(Parse.User, function(request) { 
+    if (request.object.existed()) {
+        return;
+    }
+
+    Parse.Cloud.useMasterKey();
+    incrementUserCount();
+});
+
+function incrementUserCount() {
     var UserCount = Parse.Object.extend("UserCount");
     var userCountQuery = new Parse.Query(UserCount);
 
@@ -61,15 +71,15 @@ function incrementUserCount(newUser, response) {
             userCount.increment('count');
             userCount.save(null, {
                 success: function(userCount) {
-                    response.success(newUser);
+                    // success
                 },
                 error: function(userCount,error) {
-                    response.error();
+                    console.error("error: " + error.code + " : " error.message);
                 }
             });
         },
         error: function(userCount,error) {
-            response.error(error);
+            console.error("error: " + error.code + " : " error.message);
         }
     });
 }
