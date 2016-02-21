@@ -18,10 +18,11 @@ Parse.Cloud.define("hello", function(request, response) {
 });
 
 Parse.Cloud.define("sendMessage", function(request, response) {
-    var requiredParams = ["userId", "chatRoomId", "pubkey", "subkey", "body"];
-    checkMissingParams(request.params, requiredParams, response);
-    var message = {"body": request.params.body};
-    var params = request.params;
+    var requiredParams = ["userId", "chatRoomId", "pubkey", "subkey", "body", "alias"];
+    var params = request.params;    
+    checkMissingParams(params, requiredParams, response);
+    var message = {"body": params.body};
+
     pubnub.sendMessage(params.pubkey, params.subkey, params.chatRoomId,
                        message).then(function(httpResponse) {
                            saveMessage(request.params.userId,
@@ -59,10 +60,17 @@ Parse.Cloud.afterSave(Parse.User, function(request) {
     }
 
     Parse.Cloud.useMasterKey();
-    incrementUserCount();
+    incrementUserCount({
+        success: function() {
+            console.log("incremented UserCount");
+        },
+        error: function(error) {
+            console.error(error);
+        }
+    });
 });
 
-function incrementUserCount() {
+function incrementUserCount(response) {
     var UserCount = Parse.Object.extend("UserCount");
     var userCountQuery = new Parse.Query(UserCount);
 
@@ -71,15 +79,15 @@ function incrementUserCount() {
             userCount.increment('count');
             userCount.save(null, {
                 success: function(userCount) {
-                    // success
+                    response.success();
                 },
                 error: function(userCount,error) {
-                    console.error("error: " + error.code + " : " error.message);
+                    response.error(error);
                 }
             });
         },
         error: function(userCount,error) {
-            console.error("error: " + error.code + " : " error.message);
+            response.error(error);
         }
     });
 }
