@@ -41,9 +41,7 @@ Parse.Cloud.define("registerNewUser", function(request, response) {
 
         user.save(null, {
             success: function(user) {
-                incrementUserCount(response, function() {
-                    response.success(user);
-                });
+                incrementUserCount(user, response);
             },
             error: function(user, error) {
                 response.error(error);
@@ -54,7 +52,7 @@ Parse.Cloud.define("registerNewUser", function(request, response) {
     });
 });
 
-function incrementUserCount(response, successCallback) {
+function incrementUserCount(newUser, response) {
     var UserCount = Parse.Object.extend("UserCount");
     var userCountQuery = new Parse.Query(UserCount);
 
@@ -63,7 +61,7 @@ function incrementUserCount(response, successCallback) {
             userCount.increment('count');
             userCount.save(null, {
                 success: function(userCount) {
-                    successCallback();
+                    response.success(newUser);
                 },
                 error: function(userCount,error) {
                     response.error();
