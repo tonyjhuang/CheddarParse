@@ -17,6 +17,17 @@ Parse.Cloud.define("hello", function(request, response) {
     response.success(getAliasName());
 });
 
+Parse.Cloud.define("replayMessages", function(request, response) {
+    var requiredParams = ["chatRoomId", "subkey", "count"];
+    checkMissingParams(request.params, requiredParams, response);
+    pubnub.replayMessages(request.params.subkey, request.params.chatRoomId, 
+                        request.params.count).then(function(httpResponse) {
+                            response.success(httpResponse["text"]);
+                        }, function(httpResponse) {
+                           response.error(httpResponse);
+                       });
+});
+
 Parse.Cloud.define("registerNewUser", function(request, response) {
     getUserCount(function(userCount) {
         var user = new Parse.User();
