@@ -17,6 +17,10 @@ Parse.Cloud.define("hello", function(request, response) {
     response.success(getAliasName());
 });
 
+
+// Replays messages in a channel
+// Response Payload:
+// [{messageOldest},{messageOlder},{messageNewer},{messageNewest}]
 Parse.Cloud.define("replayMessages", function(request, response) {
     var requiredParams = ["chatRoomId", "subkey", "count"];
     checkMissingParams(request.params, requiredParams, response);
