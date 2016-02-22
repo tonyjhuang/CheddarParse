@@ -17,26 +17,6 @@ Parse.Cloud.define("hello", function(request, response) {
     response.success(getAliasName());
 });
 
-Parse.Cloud.define("sendMessage", function(request, response) {
-    var requiredParams = ["pubkey", "subkey", "body", "alias"];
-    var params = request.params;    
-    checkMissingParams(params, requiredParams, response);
-    var alias = params.alias;
-    var message = {
-        "body": params.body,
-        "alias": alias
-    };
-    pubnub.sendMessage(params.pubkey, params.subkey, alias.chatRoomId,
-                       message).then(function(httpResponse) {
-                           saveMessage(alias.userId,
-                                       alias.chatRoomId,
-                                       request.params.body,
-                                       response);
-                       }, function(httpResponse) {
-                           response.error(httpResponse);
-                       });
-});
-
 Parse.Cloud.define("registerNewUser", function(request, response) {
     getUserCount(function(userCount) {
         var user = new Parse.User();
@@ -109,13 +89,41 @@ function getUserCount(successCallback, errorCallback) {
     });
 }
 
-function saveMessage(userId, chatRoomId, body, response) {
+Parse.Cloud.define("sendMessage", function(request, response) {
+    var requiredParams = ["pubkey", "subkey", "body", "aliasId"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+
+    var Alias = Parse.Object.extend("Alias");
+    var query = new Parse.Query(Alias);
+    query.get(params.aliasId, {
+        success: function(alias) {
+            var message = {
+                "body": params.body,
+                "alias": alias
+            };
+
+            pubnub.sendMessage(params.pubkey,
+                               params.subkey,
+                               alias.chatRoomId,
+                               message)
+                .then(function(httpResponse) {
+                    saveMessage(alias,
+                                params.body,
+                                response);
+                }, response.error);
+
+        },
+        error: response.error
+    });
+});
+
+function saveMessage(alias, body, response) {
     var Message = Parse.Object.extend("Message");
     var message = new Message();
 
-    message.set("userId", userId);
-    message.set("chatRoomId", chatRoomId);
     message.set("body", body);
+    message.set("alias", alias);
 
     message.save(null, {
         success: response.success,
