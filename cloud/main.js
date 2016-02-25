@@ -55,7 +55,7 @@ function incrementUserCount(response) {
     var UserCount = Parse.Object.extend("UserCount");
     var userCountQuery = new Parse.Query(UserCount);
 
-    userCountQuery.get("SqRF3QUGsM", {  
+    userCountQuery.first({  
         success: function(userCount) {
             userCount.increment('count');
             userCount.save(null, {
@@ -77,7 +77,7 @@ function getUserCount(successCallback, errorCallback) {
     var UserCount = Parse.Object.extend("UserCount");
     var userCountQuery = new Parse.Query(UserCount);
 
-    userCountQuery.get("SqRF3QUGsM", { 
+    userCountQuery.first({ 
         success: function(userCount) {
             successCallback(userCount.get("count"));
         },
