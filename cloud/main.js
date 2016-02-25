@@ -232,14 +232,7 @@ function getNextAvailableChatRoom(userId, maxOccupancy, response) {
     chatRoomQuery.notEqualTo("numOccupants", 0);
     chatRoomQuery.ascending("numOccupants");
     */
-
-    // **************************************
-    // **************************************
-    // OUR BETA CHANNEL. REMOVE BEFORE FINAL RELEASE.
-    chatRoomQuery.equalTo("objectId", "ZwLPAUqBas");
-    // **************************************
-    // **************************************
-    
+    /////////// FOR BETA, JUST RETURN THE FIRST CHAT ROOM. THIS IS OUR BETA ROOM.
     chatRoomQuery.first({
         success: function(chatRoom) {
             if (chatRoom == undefined) {
