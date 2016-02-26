@@ -25,21 +25,22 @@ Parse.Cloud.define("replayForAlias", function(request, response) {
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
 
-    var startTimeToken = request.params.startTimeToken;       
-
     var Alias = Parse.Object.extend("Alias");
     var query = new Parse.Query(Alias);
     query.get(params.aliasId, {
         success: function(alias) {
             var chatRoomId = alias.get("chatRoomId");
-            pubnub.replayChannel(request.params.subkey, chatRoomId, startTimeToken, null,
+            var startTimeToken = request.params.startTimeToken; 
+            var endTimeToken = alias.get("createdAt").getTime() * 10000; 
+
+            if (!startTimeToken) {
+                startTimeToken = new Date().getTime() * 10000; // Start token should be now if no token was used for message replay 
+            }
+    
+            pubnub.replayChannel(request.params.subkey, chatRoomId, startTimeToken, endTimeToken,
                         request.params.count, function(messages) {
 
                 var endTimeToken = messages.startTimeToken;
-
-                if (!startTimeToken) {
-                    startTimeToken = new Date().getTime() * 10000; // Start token should be now if no token was used for message replay 
-                }
                 
                 pubnub.replayChannel(request.params.subkey, alias.get("chatRoomId") + '-pnpres', 
                         startTimeToken, endTimeToken, 9999, function(presence) {
