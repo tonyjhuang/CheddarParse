@@ -9,12 +9,60 @@ curl -X POST \
 
 var adjectives = require('cloud/adjectives.js');
 var animals = require('cloud/animals.js');
-var pubnub = require('cloud/pubnub.js');
+var pubnub = require('cloud/pubnub_utils.js');
 
 // Use Parse.Cloud.define to define as many cloud functions as you want.
 // For example:
 Parse.Cloud.define("hello", function(request, response) {
     response.success(getAliasName());
+});
+
+// Replays messages in a channel
+// Response Payload:
+// [{messageOldest},{messageOlder},{messageNewer},{messageNewest}]
+Parse.Cloud.define("replayForAlias", function(request, response) {
+    var requiredParams = ["count", "subkey", "aliasId"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+
+    var Alias = Parse.Object.extend("Alias");
+    var query = new Parse.Query(Alias);
+    query.get(params.aliasId, {
+        success: function(alias) {
+            var chatRoomId = alias.get("chatRoomId");
+            var startTimeToken = request.params.startTimeToken; 
+            var endTimeToken = alias.get("createdAt").getTime() * 10000; 
+
+            if (!startTimeToken) {
+                startTimeToken = new Date().getTime() * 10000; // Start token should be now if no token was used for message replay 
+            }
+    
+            pubnub.replayChannel(request.params.subkey, chatRoomId, startTimeToken, endTimeToken,
+                        request.params.count, function(messages) {
+
+                var endTimeToken = messages.startTimeToken;
+                
+                pubnub.replayChannel(request.params.subkey, alias.get("chatRoomId") + '-pnpres', 
+                        startTimeToken, endTimeToken, 9999, function(presence) {
+
+                    presence.results = presence.results.filter(function(presenceEvent) {
+                        return presenceEvent.action == "state-change"
+                    });
+
+                    response.success({"messageEvents":messages.results,
+                                      "presenceEvents":presence.results,
+                                      "endTimeToken": messages.endTimeToken,
+                                      "startTimeToken": messages.startTimeToken});
+
+                }, function(error) {
+                    response.error(error);
+                });
+            }, function(error) {
+                response.error(error);
+            });
+        },
+        error: response.error
+    });
 });
 
 Parse.Cloud.define("registerNewUser", function(request, response) {
@@ -97,6 +145,7 @@ Parse.Cloud.define("sendMessage", function(request, response) {
     query.get(params.aliasId, {
         success: function(alias) {
             var message = {
+                "timestamp": new Date().getTime(),
                 "body": params.body,
                 "alias": alias
             };
@@ -104,12 +153,13 @@ Parse.Cloud.define("sendMessage", function(request, response) {
             pubnub.sendMessage(params.pubkey,
                                params.subkey,
                                alias.get("chatRoomId"),
-                               message)
-                .then(function(httpResponse) {
-                    saveMessage(alias,
-                                params.body,
-                                response);
-                }, response.error);
+                               message,function(httpResponse) {
+                                    saveMessage(alias,
+                                                params.body,
+                                                response);
+                                }, function(error) { 
+                                    response.error(error);
+                                });
 
         },
         error: response.error
