@@ -98,13 +98,6 @@ Parse.Cloud.define("sendMessage", function(request, response) {
         success: function(alias) {
             saveMessage(alias,params.body,{
                 success: function(message) {
-                    /*var message = {
-                        "objectId": message.getObjectId(),
-                        "body": params.body,
-                        "alias": alias,
-                        "createdAt": message.getCreatedAt(),
-                        "updatedAt": message.getUpdatedAt()
-                    };*/
                     pubnub.sendMessage(params.pubkey,
                                        params.subkey,
                                        alias.get("chatRoomId"),
