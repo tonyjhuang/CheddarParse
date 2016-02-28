@@ -96,21 +96,25 @@ Parse.Cloud.define("sendMessage", function(request, response) {
     var query = new Parse.Query(Alias);
     query.get(params.aliasId, {
         success: function(alias) {
-            var message = {
-                "body": params.body,
-                "alias": alias
-            };
-
-            pubnub.sendMessage(params.pubkey,
-                               params.subkey,
-                               alias.get("chatRoomId"),
-                               message)
-                .then(function(httpResponse) {
-                    saveMessage(alias,
-                                params.body,
-                                response);
-                }, response.error);
-
+            saveMessage(alias,params.body,{
+                success: function(message) {
+                    /*var message = {
+                        "objectId": message.getObjectId(),
+                        "body": params.body,
+                        "alias": alias,
+                        "createdAt": message.getCreatedAt(),
+                        "updatedAt": message.getUpdatedAt()
+                    };*/
+                    pubnub.sendMessage(params.pubkey,
+                                       params.subkey,
+                                       alias.get("chatRoomId"),
+                                       message)
+                        .then(function(httpResponse) {
+                            response.success(message);
+                        }, response.error)
+                },
+                error: response.error
+            });
         },
         error: response.error
     });
