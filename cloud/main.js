@@ -89,10 +89,14 @@ function incrementUserCount(response) {
                 success: function(userCount) {
                     response.success();
                 },
-                error: response.error
+                error: function(userCount,error) {
+                    response.error(error);
+                }
             });
         },
-        error: response.error
+        error: function(userCount,error) {
+            response.error(error);
+        }
     });
 }
 
@@ -148,7 +152,9 @@ function saveMessage(alias, body, response) {
 
     message.save(null, {
         success: response.success,
-        error: response.error
+        error: function(message, error) {
+            response.error(error);
+        }
     });
 }
 
@@ -208,7 +214,9 @@ Parse.Cloud.define("leaveChatRoom", function(request, response) {
                 success: function(alias) {
                     sendPresenceEvent("leave", alias, params.pubkey, params.subkey, response);
                 },
-                error: response.error
+                error: function(alias, error) {
+                    response.error(error)
+                }
             });
         },
         error: response.error
@@ -235,7 +243,9 @@ function addToChatRoom(userId, chatRoomId, aliasName, response) {
         success: function(alias) {
             response.success(alias);
         },
-        error: response.error
+        error: function(alias, error) {
+            response.error(error);
+        }
     });
 }
 
@@ -257,7 +267,9 @@ Parse.Cloud.afterSave("Alias", function(request) {
                 error: console.error
             });
         },
-        error: console.error
+        error: function(chatRoom, error) {
+            console.error(error);
+        }
     });
 });
 
@@ -299,7 +311,9 @@ function createChatRoom(maxOccupancy, response) {
 
     chatRoom.save(null, {
         success: response.success,
-        error: response.error
+        error: function(chatRoom, error) {
+            response.error(error);
+        }
     });
 }
 
