@@ -5,10 +5,7 @@ module.exports.replayChannel = replayChannel;
 
 // Returns a Promise. 
 // See https://parse.com/docs/cloudcode/guide#cloud-code-advanced
-function sendMessage(pubkey, subkey, channel, message, successCallback, errorCallback) {
-    // return Parse.Cloud.httpRequest({
-    //     url: getSendMessageUrl(pubkey, subkey, channel, message)
-    // });
+function sendMessage(pubkey, subkey, channel, message, response) {
     var pubnub = PubNub({
         publish_key: pubkey,
         subscribe_key: subkey
@@ -18,15 +15,15 @@ function sendMessage(pubkey, subkey, channel, message, successCallback, errorCal
         channel: channel,
         message: message,
         callback: function (result) {
-          successCallback(result);
+          response.success(message);
         },
         error: function (error) {
-          errorCallback(error)
+          response.error(error)
         }
     });
 }
 
-function replayChannel(subkey, channel, startTimeToken, endTimeToken, count, successCallback, errorCallback) {
+function replayChannel(subkey, channel, startTimeToken, endTimeToken, count, response) {
     var pubnub = PubNub({
         subscribe_key: subkey
     });
@@ -37,12 +34,12 @@ function replayChannel(subkey, channel, startTimeToken, endTimeToken, count, suc
         start:startTimeToken,
         end:endTimeToken,
         callback: function(result){
-            successCallback({"results":result[0],
-                             "startTimeToken":result[1],
-                             "endTimeToken":result[2]});
+            response.success({"events":result[0],
+                              "startTimeToken":result[1],
+                              "endTimeToken":result[2]});
         },
         error: function (error) {
-          errorCallback(error)
+            response.error(error)
         }
      });
 }
