@@ -190,7 +190,12 @@ Parse.Cloud.define("joinNextAvailableChatRoom", function(request, response) {
         success: function(chatRoom) {
             addToChatRoom(request.params.userId, chatRoom.id, getAliasName(), {
                 success: function(alias) {
-                    sendPresenceEvent("join", alias, params.pubkey, params.subkey, response);
+                    sendPresenceEvent("join", alias, params.pubkey, params.subkey, {
+                        success:function(event) {
+                            response.success(alias);
+                        },
+                        error:response.error
+                    });
                 },
                 error: response.error
             });
@@ -212,7 +217,12 @@ Parse.Cloud.define("leaveChatRoom", function(request, response) {
             alias.set("leftAt",new Date());
             alias.save(null, {
                 success: function(alias) {
-                    sendPresenceEvent("leave", alias, params.pubkey, params.subkey, response);
+                    sendPresenceEvent("leave", alias, params.pubkey, params.subkey, {
+                        success:function(event) {
+                            response.success(alias);
+                        },
+                        error:response.error
+                    });
                 },
                 error: function(alias, error) {
                     response.error(error)
