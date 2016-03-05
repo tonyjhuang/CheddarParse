@@ -125,9 +125,18 @@ Parse.Cloud.define("sendMessage", function(request, response) {
         success: function(alias) {
             saveMessage(alias,params.body,{
                 success: function(message) {
+
                     var messageEvent = {
                         "objectType": "messageEvent",
-                        "object": message
+                        "object": message,
+                        "pn_apns": {
+                            "aps": {
+                                "alert": {
+                                    "title":"New Message",
+                                    "body":alias.get("name") + " - " + message.get("body")
+                                }
+                            }
+                        }
                     }
                     
                     pubnub.sendMessage(params.pubkey,
