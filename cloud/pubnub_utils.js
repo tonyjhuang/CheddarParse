@@ -1,6 +1,7 @@
 var PubNub = require('cloud/pubnub');
 
 module.exports.sendMessage = sendMessage;
+module.exports.sendPresence = sendPresence;
 module.exports.replayChannel = replayChannel;
 
 // Returns a Promise. 
@@ -11,11 +12,48 @@ function sendMessage(pubkey, subkey, channel, message, response) {
         subscribe_key: subkey
     });
 
+    var messageEvent = {
+        "objectType": "messageEvent",
+        "object": message,
+        "pn_apns": {
+            "aps": {
+                "alert": {
+                    "title":"New Message",
+                    "body":message.get("alias").get("name") + " - " + message.get("body"),
+                },
+                "category":"ACTIONABLE_REPLY"
+            }
+        }
+    }
+
     pubnub.publish({
         channel: channel,
-        message: message,
+        message: messageEvent,
         callback: function (result) {
-          response.success(message);
+          response.success(messageEvent);
+        },
+        error: function (error) {
+          response.error(error)
+        }
+    });
+}
+
+function sendPresence(pubkey, subkey, channel, presence, response) {
+    var pubnub = PubNub({
+        publish_key: pubkey,
+        subscribe_key: subkey
+    });
+
+    var presenceEvent = {
+        "objectType": "presenceEvent",
+        "object": presence
+    }
+
+    pubnub.publish({
+        channel: channel,
+        message: presenceEvent,
+        callback: function (result) {
+          response.success(presenceEvent);
         },
         error: function (error) {
           response.error(error)
