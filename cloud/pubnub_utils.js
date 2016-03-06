@@ -38,7 +38,7 @@ function sendMessage(pubkey, subkey, channel, message, response) {
     });
 }
 
-function sendPresence(pubkey, subkey, channel, presence, response) {
+function sendPresence(pubkey, subkey, alias, action, response) {
     var pubnub = PubNub({
         publish_key: pubkey,
         subscribe_key: subkey
@@ -46,11 +46,14 @@ function sendPresence(pubkey, subkey, channel, presence, response) {
 
     var presenceEvent = {
         "objectType": "presenceEvent",
-        "object": presence
+        "object": {
+            "action": action,
+            "alias": alias
+        }
     }
 
     pubnub.publish({
-        channel: channel,
+        channel: alias.get("chatRoomId"),
         message: presenceEvent,
         callback: function (result) {
           response.success(presenceEvent);

@@ -154,15 +154,10 @@ function saveMessage(alias, body, response) {
 }
 
 function sendPresenceEvent(action, alias, pubkey, subkey, response) {
-    var presence = {
-        "action": action,
-        "alias": alias   
-    }
-
     pubnub.sendPresence(pubkey,
                        subkey,
-                       alias.get("chatRoomId"),
-                       presence,
+                       alias,
+                       action,
                        response);
 }
 
