@@ -125,15 +125,10 @@ Parse.Cloud.define("sendMessage", function(request, response) {
         success: function(alias) {
             saveMessage(alias,params.body,{
                 success: function(message) {
-                    var messageEvent = {
-                        "objectType": "messageEvent",
-                        "object": message
-                    }
-                    
                     pubnub.sendMessage(params.pubkey,
                                        params.subkey,
                                        alias.get("chatRoomId"),
-                                       messageEvent,
+                                       message,
                                        response);
                 },
                 error: response.error
@@ -159,17 +154,10 @@ function saveMessage(alias, body, response) {
 }
 
 function sendPresenceEvent(action, alias, pubkey, subkey, response) {
-    var presenceEvent = {
-        "objectType": "presenceEvent",
-        "object": {
-            "action": action,
-            "alias": alias
-        }
-    }
-    pubnub.sendMessage(pubkey,
+    pubnub.sendPresence(pubkey,
                        subkey,
-                       alias.get("chatRoomId"),
-                       presenceEvent,
+                       alias,
+                       action,
                        response);
 }
 
