@@ -58,9 +58,7 @@ function sendPresence(pubkey, subkey, alias, action, response) {
         callback: function (result) {
           response.success(presenceEvent);
         },
-        error: function (error) {
-          response.error(error)
-        }
+        error: response.error
     });
 }
 
@@ -79,8 +77,6 @@ function replayChannel(subkey, channel, startTimeToken, endTimeToken, count, res
                               "startTimeToken":result[1],
                               "endTimeToken":result[2]});
         },
-        error: function (error) {
-            response.error(error)
-        }
+        error: response.error
      });
 }
