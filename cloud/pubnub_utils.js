@@ -23,6 +23,16 @@ function sendMessage(pubkey, subkey, channel, message, response) {
                 },
                 "category":"ACTIONABLE_REPLY"
             }
+        },
+        "pn_gcm": {
+            "data": {
+                // nested data object since this data object contains
+                // meta information about the push notification.
+                "data": {
+                    "objectType": "messageEvent",
+                    "object": message
+                }
+            }
         }
     }
 
@@ -32,9 +42,7 @@ function sendMessage(pubkey, subkey, channel, message, response) {
         callback: function (result) {
           response.success(messageEvent);
         },
-        error: function (error) {
-          response.error(error)
-        }
+        error: response.error
     });
 }
 
@@ -49,6 +57,19 @@ function sendPresence(pubkey, subkey, alias, action, response) {
         "object": {
             "action": action,
             "alias": alias
+        },
+        "pn_gcm": {
+            "data": {
+                // nested data object since this data object contains
+                // meta information about the push notification.
+                "data": {
+                    "objectType": "presenceEvent",
+                    "object": {
+                        "action": action,
+                        "alias": alias
+                    }
+                }
+            }
         }
     }
 
