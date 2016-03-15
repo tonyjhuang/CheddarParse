@@ -26,10 +26,8 @@ function sendMessage(pubkey, subkey, channel, message, response) {
         },
         "pn_gcm": {
             "data": {
-                // nested data object since this data object contains
-                // meta information about the push notification.
-                "data": {
-                    "objectType": "messageEvent",
+                "payload": {
+                "objectType": "messageEvent",
                     "object": message
                 }
             }
@@ -60,9 +58,7 @@ function sendPresence(pubkey, subkey, alias, action, response) {
         },
         "pn_gcm": {
             "data": {
-                // nested data object since this data object contains
-                // meta information about the push notification.
-                "data": {
+                "payload": {
                     "objectType": "presenceEvent",
                     "object": {
                         "action": action,
