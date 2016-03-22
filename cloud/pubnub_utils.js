@@ -19,9 +19,8 @@ function sendMessage(pubkey, subkey, channel, message, response) {
             "aps": {
                 "alert": {
                     "title":"New Message",
-                    "body":message.get("alias").get("name") + " - " + message.get("body"),
-                },
-                "category":"ACTIONABLE_REPLY"
+                    "body": message.get("alias").get("name") + "says: " + message.get("body")
+                }
             }
         }
     }
@@ -44,11 +43,21 @@ function sendPresence(pubkey, subkey, alias, action, response) {
         subscribe_key: subkey
     });
 
+    var verb = action == "join" ? "Joined" : "Left";
+
     var presenceEvent = {
         "objectType": "presenceEvent",
         "object": {
             "action": action,
             "alias": alias
+        },
+        "pn_apns": {
+            "aps": {
+                "alert": {
+                    "title":verb,
+                    "body":alias.get("name") + " " + verb.toLowerCase()
+                }
+            }
         }
     }
 
