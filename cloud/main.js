@@ -315,6 +315,18 @@ function createChatRoom(maxOccupancy, response) {
     });
 }
 
+Parse.Cloud.define("getActiveAliases", function(request, response) {
+    var requiredParams = ["chatRoomId"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+    var chatRoomId = params.chatRoomId;
+    var aliasQuery = new Parse.Query("Alias");
+    aliasQuery.equalTo("chatRoomId", chatRoomId);
+    aliasQuery.equalTo("active", true);
+    aliasQuery.find(response);
+})
+
+
 // Check for the existence of |keys| in |params|.
 function checkMissingParams(params, keys, response) {
     var missingKeys = [];
