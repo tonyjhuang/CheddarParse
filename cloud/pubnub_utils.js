@@ -22,6 +22,14 @@ function sendMessage(pubkey, subkey, channel, message, response) {
                     "body": message.get("alias").get("name") + "says: " + message.get("body")
                 }
             }
+        },
+        "pn_gcm": {
+            "data": {
+                "payload": {
+                "objectType": "messageEvent",
+                    "object": message
+                }
+            }
         }
     }
 
@@ -31,9 +39,7 @@ function sendMessage(pubkey, subkey, channel, message, response) {
         callback: function (result) {
           response.success(messageEvent);
         },
-        error: function (error) {
-          response.error(error)
-        }
+        error: response.error
     });
 }
 
@@ -51,6 +57,14 @@ function sendPresence(pubkey, subkey, alias, action, response) {
             "action": action,
             "alias": alias
         },
+        "pn_gcm": {
+            "data": {
+                "payload": {
+                    "objectType": "presenceEvent",
+                    "object": {
+                        "action": action,
+                        "alias": alias
+                    }
         "pn_apns": {
             "aps": {
                 "alert": {
