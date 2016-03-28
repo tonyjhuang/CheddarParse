@@ -65,6 +65,9 @@ function sendPresence(pubkey, subkey, alias, action, response) {
                         "action": action,
                         "alias": alias
                     }
+                }
+            }
+        },
         "pn_apns": {
             "aps": {
                 "alert": {
