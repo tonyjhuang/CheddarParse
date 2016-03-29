@@ -70,8 +70,7 @@ Parse.Cloud.define("findAlias", function(request, response) {
 
     var Alias = Parse.Object.extend("Alias");
     var query = new Parse.Query(Alias);
-    query.equalTo("objectId", params.aliasId);
-    query.find(response);
+    query.get(params.aliasId, response);
 });
 
 // Increment our UserCount on new Parse Users.
