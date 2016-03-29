@@ -63,6 +63,16 @@ Parse.Cloud.define("registerNewUser", function(request, response) {
     });
 });
 
+Parse.Cloud.define("findAlias", function(request, response) {
+    var requiredParams = ["aliasId"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+
+    var Alias = Parse.Object.extend("Alias");
+    var query = new Parse.Query(Alias);
+    query.get(params.aliasId, response);
+});
+
 // Increment our UserCount on new Parse Users.
 Parse.Cloud.afterSave(Parse.User, function(request) { 
     if (request.object.existed()) {
