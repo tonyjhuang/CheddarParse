@@ -19,7 +19,7 @@ function sendMessage(pubkey, subkey, channel, message, response) {
             "aps": {
                 "alert": {
                     "title":"New Message",
-                    "body": message.get("alias").get("name") + "says: " + message.get("body")
+                    "body": message.get("alias").get("name") + " says: " + message.get("body")
                 }
             }
         },
