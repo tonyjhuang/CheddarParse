@@ -54,6 +54,18 @@ Parse.Cloud.define("replayEvents", function(request, response) {
     }));
 });
 
+// Takes: userId: string
+// Returns: [{alias, chatRoom, message}, ...]
+Parse.Cloud.define("getChatRooms", function(request, response) {
+    User.get(userId, wrap(response, function(user) {
+        Alias.getActiveForUser(user.id, wrap(response, function(aliases) {
+            ChatRoom.getForAliases(aliases, wrap(response, function(chatRooms) {
+                // do stuff
+            }));
+        }));
+    }));
+}
+
 // Creates a new User object.
 Parse.Cloud.define("registerNewUser", function(request, response) {
     UserCount.count(wrap(response, function(userCount) {
@@ -194,7 +206,7 @@ Parse.Cloud.afterSave("Alias", function(request) {
 
     var chatRoomId = request.object.get("chatRoomId");
     ChatRoom.get(chatRoomId, wrap(response, function(chatRoom) {
-        Alias.getActive(chatRoomId, wrap(response, function(aliases) {
+        Alias.getActiveForChatRoom(chatRoomId, wrap(response, function(aliases) {
             chatRoom.set("numOccupants", aliases.length);
             chatRoom.save();
         }));

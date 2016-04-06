@@ -14,3 +14,7 @@ function create(alias, body, response) {
         }
     });
 }
+
+function getRecentForChatRooms(chatRooms, response) {
+    // map chatrooms to ids, grab most recent message for each.
+}
