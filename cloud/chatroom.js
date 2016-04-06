@@ -8,19 +8,18 @@ function get(chatRoomId, response) {
 
 // Retrieves the next available ChatRoom for the user with the
 // given id. Creates a new ChatRoom if none exist.
-function getNextAvailableChatRoom(userId, maxOccupancy, response) {
+function getNextAvailableChatRoom(user, maxOccupancy, response) {
     var aliasQuery = new Parse.Query("Alias");
-    aliasQuery.equalTo("userId", userId);
+    aliasQuery.equalTo("userId", user.id);
 
     var chatRoomQuery = new Parse.Query("ChatRoom");
-    /*
+
     // Don't return ChatRooms that this User already has an Alias for.
     chatRoomQuery.doesNotMatchKeyInQuery("objectId", "chatRoomId", aliasQuery);
     chatRoomQuery.equalTo("maxOccupancy", maxOccupancy);
     chatRoomQuery.notEqualTo("numOccupants", 0);
     chatRoomQuery.ascending("numOccupants");
-    */
-    /////////// FOR BETA, JUST RETURN THE FIRST CHAT ROOM. THIS IS OUR BETA ROOM.
+
     chatRoomQuery.first({
         success: function(chatRoom) {
             if (chatRoom == undefined) {
@@ -41,10 +40,5 @@ function createChatRoom(maxOccupancy, response) {
     chatRoom.set("maxOccupancy", maxOccupancy);
     chatRoom.set("numOccupants", 0);
 
-    chatRoom.save(null, {
-        success: response.success,
-        error: function(chatRoom, error) {
-            response.error(error);
-        }
-    });
+    chatRoom.save(null, response);
 }

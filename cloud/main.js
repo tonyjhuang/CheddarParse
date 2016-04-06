@@ -7,13 +7,13 @@ curl -X POST \
  https://api.parse.com/1/functions/hello
 */
 
-var adjectives = require('cloud/adjectives.js');
-var animals = require('cloud/animals.js');
 var Alias = require('cloud/alias.js');
 var ChatRoom = require('cloud/chatroom.js');
 var Message = require('cloud/message.js');
 var Pubnub = require('cloud/pubnub.js');
+var User = require('cloud/user.js');
 var UserCount = require('cloud/usercount.js');
+
 
 // Use Parse.Cloud.define to define as many cloud functions as you want.
 // For example:
@@ -57,7 +57,26 @@ Parse.Cloud.define("replayEvents", function(request, response) {
 // Creates a new User object.
 Parse.Cloud.define("registerNewUser", function(request, response) {
     UserCount.count(wrap(response, function(userCount) {
-        User.create(userCount.toString(), wrap(response));
+        User.create((userCount+1).toString(), wrap(response));
+    }));
+});
+
+// Increment our UserCount on new Parse Users.
+Parse.Cloud.afterSave(Parse.User, function(request) {
+    if (request.object.existed()) {
+        return;
+    }
+
+    // Wrap console.error in response object.
+    var response = {
+        error: function(error) {
+            console.error(error);
+        }
+    }
+
+    Parse.Cloud.useMasterKey();
+    UserCount.increment(wrap(response, function(userCount) {
+        console.log("incremented UserCount");
     }));
 });
 
@@ -66,19 +85,6 @@ Parse.Cloud.define("findAlias", function(request, response) {
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
     Alias.get(params.aliasId, wrap(response));
-});
-
-
-// Increment our UserCount on new Parse Users.
-Parse.Cloud.afterSave(Parse.User, function(request) {
-    if (request.object.existed()) {
-        return;
-    }
-
-    Parse.Cloud.useMasterKey();
-    UserCount.increment(wrap(response, function(userCount) {
-        console.log("incremented UserCount");
-    }));
 });
 
 // Sends a message through pubnub, persists it through parse.
@@ -116,7 +122,9 @@ Parse.Cloud.define("getNextAvailableChatRoom", function(request, response) {
     var userId = params.userId;
     var maxOccupancy = params.maxOccupancy;
 
-    ChatRoom.getNextAvailableChatRoom(userId, maxOccupancy, wrap(response));
+    User.get(userId, wrap(response, function(user) {
+        ChatRoom.getNextAvailableChatRoom(user, maxOccupancy, wrap(response));
+    }));
 });
 
 
@@ -134,17 +142,20 @@ Parse.Cloud.define("joinNextAvailableChatRoom", function(request, response) {
     var pubkey = params.pubkey;
     var subkey = params.subkey;
 
-    ChatRoom.getNextAvailableChatRoom(
-        userId, maxOccupancy, wrap(response, function(chatRoom) {
-            Alias.create(wrap(response, function(alias) {
-                Pubnub.sendPresence("join", alias, pubkey, subkey, {
-                    success: function(event) {
-                        response.success(alias);
-                    },
-                    error: response.error
-                });
+    User.get(userId, wrap(response, function(user) {
+        ChatRoom.getNextAvailableChatRoom(
+            user, maxOccupancy, wrap(response, function(chatRoom) {
+                Alias.create(userId, chatRoom.id, wrap(response, function(alias) {
+                    // No need to wrap pubnub response objects.
+                    Pubnub.sendPresence(pubkey, subkey, alias, "join", {
+                        success: function(event) {
+                            response.success(alias);
+                        },
+                        error: response.error
+                    });
+                }));
             }));
-        }));
+    }));
 });
 
 // Removes a User from a ChatRoom by deactivating the active Alias and
@@ -161,7 +172,8 @@ Parse.Cloud.define("leaveChatRoom", function (request, response) {
     var subkey = params.subkey;
 
     Alias.deactivate(aliasId, wrap(response, function(alias) {
-        Pubnub.sendPresence("leave", alias, pubkey, subkey, {
+        // No need to wrap pubnub response objects.
+        Pubnub.sendPresence(pubkey, subkey, alias, "leave", {
             success:function(event) {
                 response.success(alias);
             },
