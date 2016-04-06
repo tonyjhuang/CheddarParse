@@ -1,5 +1,4 @@
 module.exports.get = get;
-module.exports.getQuery = getQuery;
 module.exports.deactive = deactivate;
 module.exports.create = create;
 module.exports.generateName = generateName;
@@ -7,22 +6,6 @@ module.exports.generateName = generateName;
 function get(aliasId, response) {
     var query = new Parse.Query("Alias");
     query.get(aliasId, response);
-}
-
-// optional params: objectId, chatRoomId, active
-function getQuery(aliasId, options) {
-    var query = new Parse.Query("Alias");
-
-    if('objectId' in options)
-        query.equalTo('objectId', options.objectId);
-
-    if('chatRoomId' in options)
-        query.equalTo('chatRoomId', options.chatRoomId);
-
-    if('active' in options)
-        query.equalTo('active', options.active);
-
-    return query;
 }
 
 function deactivate(aliasId, response) {
