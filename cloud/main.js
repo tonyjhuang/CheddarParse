@@ -24,6 +24,7 @@ Parse.Cloud.define("hello", function(request, response) {
 
 
 // Replays events in a channel for an alias
+// Optional params: startTimeToken, endTimeToken
 // Response Payload:
 // {"events":[{event}, {event}],
 //   "startTimeToken": "00000",
@@ -45,7 +46,9 @@ function replayEvents(count, aliasId, subkey, response) {
         success: function(alias) {
             var chatRoomId = alias.get("chatRoomId");
             var startTimeToken = params.startTimeToken;
-            var endTimeToken = alias.get("createdAt").getTime() * 10000;
+            var endTimeToken = params.endTimeToken
+                ? params.endTimeToken
+                : alias.get("createdAt").getTime() * 10000;
             var count = params.count;
 
             if (!startTimeToken) {
