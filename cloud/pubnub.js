@@ -19,11 +19,15 @@ var TYPE = {
     }
 }
 
+// Takes: {pubkey, subkey, channel, chatEvent}, response
+// Returns: pubnub response
 function sendMessage(params, response) {
     params.type = TYPE.MESSAGE;
     sendChatEvent(params, response);
 }
 
+// Takes: {pubkey, subkey, channel, chatEvent}, response
+// Returns: pubnub response
 function sendPresence(params, response) {
     params.type = TYPE.PRESENCE;
     sendChatEvent(params, response);
