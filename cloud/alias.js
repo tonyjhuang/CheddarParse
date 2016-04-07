@@ -15,7 +15,7 @@ function get(aliasId, response) {
     query.get(aliasId, response);
 }
 
-function getActiveForChatRoom(chatroomId, response) {
+function getActiveForChatRoom(chatRoomId, response) {
     var query = new Parse.Query("Alias");
     query.equalTo("chatRoomId", chatRoomId);
     query.equalTo("active", true);
