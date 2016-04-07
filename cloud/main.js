@@ -237,6 +237,10 @@ Parse.Cloud.afterSave("Alias", function(request) {
     }));
 });
 
+
+// Gets the list of ACTIVE Aliases for a given ChatRoom.
+// Takes: chatRoomId: string
+// Returns: [Alias, Alias, ...]
 Parse.Cloud.define("getActiveAliases", function(request, response) {
     var requiredParams = ["chatRoomId"];
     var params = request.params;
