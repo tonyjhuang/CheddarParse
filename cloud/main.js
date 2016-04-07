@@ -80,11 +80,20 @@ Parse.Cloud.afterSave(Parse.User, function(request) {
     }));
 });
 
+// Useful for validating user ids.
 Parse.Cloud.define("findAlias", function(request, response) {
     var requiredParams = ["aliasId"];
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
     Alias.get(params.aliasId, wrap(response));
+});
+
+// Useful for validating user ids.
+Parse.Cloud.define("findUser", function(request, response) {
+    var requiredParams = ["userId"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+    User.get(params.userId, wrap(response));
 });
 
 // Sends a message through pubnub, persists it through parse.
