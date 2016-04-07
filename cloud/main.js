@@ -225,6 +225,13 @@ Parse.Cloud.afterSave("Alias", function(request) {
     }));
 });
 
+Parse.Cloud.define("getActiveAliases", function(request, response) {
+    var requiredParams = ["chatRoomId"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+    var chatRoomId = params.chatRoomId;
+    Alias.getActiveForChatRoom(chatRoomId, wrap(response));
+})
 
 // Check for the existence of |keys| in |params|.
 function checkMissingParams(params, keys, response) {
