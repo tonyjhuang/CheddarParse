@@ -4,100 +4,82 @@ module.exports.sendMessage = sendMessage;
 module.exports.sendPresence = sendPresence;
 module.exports.replayChannel = replayChannel;
 
+var TYPE = {
+    MESSAGE: {
+        apns_title: "New Message",
+        apns_getBody: function(message) {
+            return message.get("alias").get("name") + " says: " + message.get("body");
+        }
+    },
+    PRESENCE: {
+        apns_title: "Cheddar", // Replace with ChatRoom name.
+        apns_getBody: function(presence) {
+            return presence.get("body");
+        }
+    }
+}
+
+function sendMessage(params, response) {
+    params.type = TYPE.MESSAGE;
+    sendChatEvent(params, response);
+}
+
+function sendPresence(params, response) {
+    params.type = TYPE.PRESENCE;
+    sendChatEvent(params, response);
+}
+
 // Returns a Promise.
 // See https://parse.com/docs/cloudcode/guide#cloud-code-advanced
-function sendMessage(pubkey, subkey, channel, message, response) {
+// Takes: {pubkey, subkey, channel, chatEvent, type}, response
+function sendChatEvent(params, response) {
     var pubnub = PubNub({
-        publish_key: pubkey,
-        subscribe_key: subkey
+        publish_key: params.pubkey,
+        subscribe_key: params.subkey
     });
 
-    var messageEvent = {
-        "objectType": "messageEvent",
-        "object": message,
+    var payload = {
+        "objectType": "ChatEvent",
+        "object": params.chatEvent,
         "pn_apns": {
             "aps": {
                 "alert": {
-                    "title":"New Message",
-                    "body": message.get("alias").get("name") + " says: " + message.get("body")
+                    "title": params.type.apns_title,
+                    "body": params.type.apns_getBody(params.chatEvent)
                 }
             }
         },
         "pn_gcm": {
             "data": {
                 "payload": {
-                "objectType": "messageEvent",
-                    "object": message
+                    "objectType": "ChatEvent",
+                    "object": params.chatEvent
                 }
             }
         }
     }
 
     pubnub.publish({
-        channel: channel,
-        message: messageEvent,
+        channel: params.channel,
+        message: payload,
         callback: function (result) {
-          response.success(messageEvent);
+          response.success(params.chatEvent);
         },
         error: response.error
     });
 }
 
-function sendPresence(pubkey, subkey, alias, action, response) {
+// Takes: {subkey, channel, startTimeToken, endTimeToken, count}, response
+function replayChannel(params, response) {
     var pubnub = PubNub({
-        publish_key: pubkey,
-        subscribe_key: subkey
-    });
-
-    var verb = action == "join" ? "Joined" : "Left";
-
-    var presenceEvent = {
-        "objectType": "presenceEvent",
-        "object": {
-            "action": action,
-            "alias": alias
-        },
-        "pn_gcm": {
-            "data": {
-                "payload": {
-                    "objectType": "presenceEvent",
-                    "object": {
-                        "action": action,
-                        "alias": alias
-                    }
-                }
-            }
-        },
-        "pn_apns": {
-            "aps": {
-                "alert": {
-                    "title":verb,
-                    "body":alias.get("name") + " " + verb.toLowerCase()
-                }
-            }
-        }
-    }
-
-    pubnub.publish({
-        channel: alias.get("chatRoomId"),
-        message: presenceEvent,
-        callback: function (result) {
-          response.success(presenceEvent);
-        },
-        error: response.error
-    });
-}
-
-function replayChannel(subkey, channel, startTimeToken, endTimeToken, count, response) {
-    var pubnub = PubNub({
-        subscribe_key: subkey
+        subscribe_key: params.subkey
     });
 
     pubnub.history({
-        channel: channel,
-        count: count,
-        start:startTimeToken,
-        end:endTimeToken,
+        channel: params.channel,
+        count: params.count,
+        start: params.startTimeToken,
+        end: params.endTimeToken,
         callback: function(result){
             response.success({"events":result[0],
                               "startTimeToken":result[1],

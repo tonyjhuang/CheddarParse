@@ -36,9 +36,13 @@ function create(userId, chatRoomId, response) {
     alias.save(null, response);
 }
 
+String.prototype.capitalize = function() {
+    return this.charAt(0).toUpperCase() + this.slice(1);
+}
+
 // Generate new Alias name.
 function generateName() {
-    return adjectives.random() + " " + animals.random();
+    return adjectives.random().capitalize() + " " + animals.random().capitalize();
 }
 
 // Returns all active Aliases for a given ChatRoom.
