@@ -64,7 +64,7 @@ Parse.Cloud.define("getChatRooms", function(request, response) {
             }));
         }));
     }));
-}
+});
 
 // Creates a new User object.
 Parse.Cloud.define("registerNewUser", function(request, response) {
