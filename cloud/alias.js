@@ -1,4 +1,5 @@
 module.exports.get = get;
+module.exports.getActiveForChatRoom = getActiveForChatRoom;
 module.exports.deactive = deactivate;
 module.exports.create = create;
 module.exports.generateName = generateName;
@@ -12,6 +13,13 @@ var animals = require('cloud/animals.js');
 function get(aliasId, response) {
     var query = new Parse.Query("Alias");
     query.get(aliasId, response);
+}
+
+function getActiveForChatRoom(chatroomId, response) {
+    var query = new Parse.Query("Alias");
+    query.equalTo("chatRoomId", chatRoomId);
+    query.equalTo("active", true);
+    query.find(response);
 }
 
 function deactivate(aliasId, response) {
