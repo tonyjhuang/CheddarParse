@@ -2,8 +2,8 @@ module.exports.createMessage = createMessage;
 module.exports.createJoinPresence = createJoinPresence;
 module.exports.createLeavePresence = createLeavePresence;
 const TYPE = {
-    MESSAGE: {text: "Message"},
-    PRESENCE: {text: "Presence"}
+    MESSAGE: {text: "MESSAGE"},
+    PRESENCE: {text: "PRESENCE"}
 };
 
 const P_SUBTYPE = {
