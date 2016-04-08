@@ -7,10 +7,5 @@ function create(alias, body, response) {
     message.set("body", body);
     message.set("alias", alias);
 
-    message.save(null, {
-        success: response.success,
-        error: function(message, error) {
-            response.error(error);
-        }
-    });
+    return message.save(null);
 }

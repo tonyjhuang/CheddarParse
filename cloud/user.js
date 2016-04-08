@@ -1,15 +1,15 @@
 module.exports.get = get;
 module.exports.create = create;
 
-function get(userId, response) {
+function get(userId) {
     var query = new Parse.Query(Parse.User);
-    query.get(userId, response);
+    return query.get(userId);
 }
 
-function create(username, response) {
+function create(username) {
     var user = new Parse.User();
     user.set('username', username);
     user.set('password', 'password');
 
-    user.save(null, response);
+    return user.save(null);
 }
