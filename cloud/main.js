@@ -52,6 +52,7 @@ Parse.Cloud.define("replayEvents", function(request, response) {
                              count)
             .then(response.success, response.error);
     }, response.error);
+});
 
 // Takes: userId: string
 // Returns: [{alias, chatRoom, message}, ...]
