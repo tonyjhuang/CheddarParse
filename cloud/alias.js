@@ -65,5 +65,5 @@ function getActiveForUser(userId) {
     var query = new Parse.Query("Alias");
     query.equalTo("userId", userId);
     query.equalTo("active", true);
-    query.find();
+    return query.find();
 }
