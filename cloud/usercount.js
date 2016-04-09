@@ -3,36 +3,23 @@ module.exports.count = count;
 
 // Increments the UserCount.
 // Returns: UserCount
-function increment(response) {
+function increment() {
     var UserCount = Parse.Object.extend("UserCount");
-    var userCountQuery = new Parse.Query(UserCount);
+    var query = new Parse.Query(UserCount);
 
-    userCountQuery.first({
-        success: function(userCount) {
-            userCount.increment('count');
-            userCount.save(null, {
-                success: response.success,
-                error: function(userCount,error) {
-                    response.error(error);
-                }
-            });
-        },
-        error: function(userCount,error) {
-            response.error(error);
-        }
+    return query.first().then(function(userCount) {
+        userCount.increment('count');
+        return userCount.save(null);
     });
 }
 
 // Gets the total number of users.
 // Returns: int
-function count(response) {
+function count() {
     var UserCount = Parse.Object.extend("UserCount");
     var query = new Parse.Query(UserCount);
 
-    query.first({
-        success: function(userCount) {
-            response.success(userCount.get("count"));
-        },
-        error: response.error
+   return query.first().then(function(userCount) {
+        return Parse.Promise.as(userCount.get("count"));
     });
 }
