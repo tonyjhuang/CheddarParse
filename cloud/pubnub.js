@@ -6,7 +6,7 @@ module.exports.replayChannel = replayChannel;
 
 // Returns a Promise.
 // See https://parse.com/docs/cloudcode/guide#cloud-code-advanced
-function sendMessage(pubkey, subkey, channel, message, response) {
+function sendMessage(pubkey, subkey, message) {
     var pubnub = PubNub({
         publish_key: pubkey,
         subscribe_key: subkey
@@ -33,22 +33,10 @@ function sendMessage(pubkey, subkey, channel, message, response) {
         }
     }
 
-    pubnub.publish({
-        channel: channel,
-        message: messageEvent,
-        callback: function (result) {
-          response.success(messageEvent);
-        },
-        error: response.error
-    });
+    return publish(pubkey, subkey, message.get("alias").get("chatRoomId"), messageEvent);
 }
 
-function sendPresence(pubkey, subkey, alias, action, response) {
-    var pubnub = PubNub({
-        publish_key: pubkey,
-        subscribe_key: subkey
-    });
-
+function sendPresence(pubkey, subkey, alias, action) {
     var verb = action == "join" ? "Joined" : "Left";
 
     var presenceEvent = {
@@ -78,31 +66,51 @@ function sendPresence(pubkey, subkey, alias, action, response) {
         }
     }
 
-    pubnub.publish({
-        channel: alias.get("chatRoomId"),
-        message: presenceEvent,
-        callback: function (result) {
-          response.success(presenceEvent);
-        },
-        error: response.error
-    });
+    return publish(pubkey, subkey, alias.get("chatRoomId"), presenceEvent);
 }
 
-function replayChannel(subkey, channel, startTimeToken, endTimeToken, count, response) {
+// Publish a message through pubnub, returns a Promise.
+function publish(pubkey, subkey, channel, payload) {
+    var promise = new Parse.Promise();
+
+    PubNub({
+        publish_key: pubkey,
+        subscribe_key: subkey
+    }).publish({
+        channel: channel,
+        message: payload,
+        callback: function (result) {
+            promise.resolve(result);
+        },
+        error: function(error) {
+            promise.reject(error);
+        }
+    });
+
+    return promise;
+}
+
+function replayChannel(subkey, channel, startTimeToken, endTimeToken, count) {
     var pubnub = PubNub({
         subscribe_key: subkey
     });
+
+    var promise = new Parse.Promise();
 
     pubnub.history({
         channel: channel,
         count: count,
         start:startTimeToken,
         end:endTimeToken,
-        callback: function(result){
-            response.success({"events":result[0],
-                              "startTimeToken":result[1],
-                              "endTimeToken":result[2]});
+        callback: function(result) {
+            promise.resolve({"events":result[0],
+                             "startTimeToken":result[1],
+                             "endTimeToken":result[2]});
         },
-        error: response.error
-     });
+        error: function(error) {
+            promise.reject(error);
+        }
+    });
+
+    return promise;
 }

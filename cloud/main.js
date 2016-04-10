@@ -1,10 +1,10 @@
 /*
-curl -X POST \
- -H "X-Parse-Application-Id: ${APPLICATION_ID}" \
- -H "X-Parse-REST-API-Key: ${REST_API_KEY}" \
- -H "Content-Type: application/json" \
- -d '{}' \
- https://api.parse.com/1/functions/hello
+  curl -X POST \
+  -H "X-Parse-Application-Id: ${APPLICATION_ID}" \
+  -H "X-Parse-REST-API-Key: ${REST_API_KEY}" \
+  -H "Content-Type: application/json" \
+  -d '{}' \
+  https://api.parse.com/1/functions/hello
 */
 
 var Alias = require('cloud/alias.js');
@@ -36,7 +36,7 @@ Parse.Cloud.define("replayEvents", function(request, response) {
     var aliasId = params.aliasId;
     var subkey = params.subkey;
 
-    Alias.get(params.aliasId, wrap(response, function(alias) {
+    Alias.get(params.aliasId).then(function(alias) {
         var chatRoomId = alias.get("chatRoomId");
         var startTimeToken = params.startTimeToken
             ? params.startTimeToken
@@ -49,16 +49,18 @@ Parse.Cloud.define("replayEvents", function(request, response) {
                              chatRoomId,
                              startTimeToken,
                              endTimeToken,
-                             count,
-                             response);
-    }));
+                             count)
+            .then(response.success, response.error);
+
+    }, response.error);
 });
 
 // Creates a new User object.
 Parse.Cloud.define("registerNewUser", function(request, response) {
-    UserCount.count(wrap(response, function(userCount) {
-        User.create((userCount+1).toString(), wrap(response));
-    }));
+    UserCount.count().then(function(count) {
+        return User.create((count+1).toString())
+
+    }).then(response.success, response.error);
 });
 
 // Increment our UserCount on new Parse Users.
@@ -75,16 +77,14 @@ Parse.Cloud.afterSave(Parse.User, function(request) {
     }
 
     Parse.Cloud.useMasterKey();
-    UserCount.increment(wrap(response, function(userCount) {
-        console.log("incremented UserCount");
-    }));
+    UserCount.increment().then(console.log, console.error);
 });
 
 Parse.Cloud.define("findAlias", function(request, response) {
     var requiredParams = ["aliasId"];
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
-    Alias.get(params.aliasId, wrap(response));
+    Alias.get(params.aliasId).then(response.success, response.error);
 });
 
 // Sends a message through pubnub, persists it through parse.
@@ -100,15 +100,15 @@ Parse.Cloud.define("sendMessage", function(request, response) {
     var pubkey = params.pubkey;
     var subkey = params.subkey;
 
-    Alias.get(aliasId, wrap(response, function(alias) {
-        Message.create(alias, body, wrap(response, function(message) {
-            Pubnub.sendMessage(pubkey,
-                               subkey,
-                               alias.get("chatRoomId"),
-                               message,
-                               response);
-        }));
-    }));
+    Alias.get(aliasId).then(function(alias) {
+        return Message.create(alias, body);
+    }).then(function(message) {
+        // Nested promise to keep message in scope.
+        Pubnub.sendMessage(pubkey,subkey,message).then(function(result) {
+            response.success(message)
+
+        }, response.error);
+    }, response.error)
 });
 
 
@@ -122,9 +122,10 @@ Parse.Cloud.define("getNextAvailableChatRoom", function(request, response) {
     var userId = params.userId;
     var maxOccupancy = params.maxOccupancy;
 
-    User.get(userId, wrap(response, function(user) {
-        ChatRoom.getNextAvailableChatRoom(user, maxOccupancy, wrap(response));
-    }));
+    User.get(userId).then(function(user) {
+        return ChatRoom.getNextAvailableChatRoom(user, maxOccupancy);
+
+    }).then(response.success, response.error);
 });
 
 
@@ -142,20 +143,19 @@ Parse.Cloud.define("joinNextAvailableChatRoom", function(request, response) {
     var pubkey = params.pubkey;
     var subkey = params.subkey;
 
-    User.get(userId, wrap(response, function(user) {
-        ChatRoom.getNextAvailableChatRoom(
-            user, maxOccupancy, wrap(response, function(chatRoom) {
-                Alias.create(userId, chatRoom.id, wrap(response, function(alias) {
-                    // No need to wrap pubnub response objects.
-                    Pubnub.sendPresence(pubkey, subkey, alias, "join", {
-                        success: function(event) {
-                            response.success(alias);
-                        },
-                        error: response.error
-                    });
-                }));
-            }));
-    }));
+    User.get(userId).then(function(user) {
+        return ChatRoom.getNextAvailableChatRoom(user, maxOccupancy);
+
+    }).then(function(chatRoom) {
+        return Alias.create(userId, chatRoom.id)
+    }).then(function(alias) {
+        Pubnub.sendPresence(pubkey, subkey, alias, "join").then(function(result) {
+            response.success(alias);
+
+        }, response.error);
+    }, response.error);
+
+
 });
 
 // Removes a User from a ChatRoom by deactivating the active Alias and
@@ -171,34 +171,27 @@ Parse.Cloud.define("leaveChatRoom", function (request, response) {
     var pubkey = params.pubkey;
     var subkey = params.subkey;
 
-    Alias.deactivate(aliasId, wrap(response, function(alias) {
-        // No need to wrap pubnub response objects.
-        Pubnub.sendPresence(pubkey, subkey, alias, "leave", {
-            success:function(event) {
-                response.success(alias);
-            },
-            error: response.error
-        });
-    }));
+    Alias.deactivate(aliasId).then(function(alias) {
+        Pubnub.sendPresence(pubkey, subkey, alias, "leave").then(function(result) {
+            response.success(alias);
+
+        }, response.error);
+    }, response.error);
 });
 
 // After any Alias is updated, make sure the associated ChatRoom's
 // numOccupants field reflects the number of active members.
 Parse.Cloud.afterSave("Alias", function(request) {
-    // Wrap console.error in response object.
-    var response = {
-        error: function(error) {
-            console.error(error);
-        }
-    }
-
     var chatRoomId = request.object.get("chatRoomId");
-    ChatRoom.get(chatRoomId, wrap(response, function(chatRoom) {
-        Alias.getActive(chatRoomId, wrap(response, function(aliases) {
+
+
+    Alias.getActive(chatRoomId).then(function(aliases) {
+        ChatRoom.get(chatRoomId).then(function(chatRoom) {
             chatRoom.set("numOccupants", aliases.length);
             chatRoom.save();
-        }));
-    }));
+
+        }, console.error);
+    }, console.error);
 });
 
 
@@ -209,8 +202,9 @@ Parse.Cloud.define("getActiveAliases", function(request, response) {
     var requiredParams = ["chatRoomId"];
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
-    var chatRoomId = params.chatRoomId;
-    Alias.getActiveForChatRoom(chatRoomId, wrap(response));
+
+    Alias.getActiveForChatRoom(params.chatRoomId)
+        .then(response.success, response.error);
 })
 
 // Check for the existence of |keys| in |params|.
