@@ -1,4 +1,4 @@
-var PubNub = require('cloud/utils/pubnub_lib');
+var PubNub = require('../cloud/utils/pubnub_lib');
 
 module.exports.sendMessage = sendMessage;
 module.exports.sendPresence = sendPresence;

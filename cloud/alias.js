@@ -6,8 +6,8 @@ module.exports.generateName = generateName;
 module.exports.getActive = getActive;
 module.exports.deactivate = deactivate;
 
-var adjectives = require('cloud/adjectives.js');
-var animals = require('cloud/animals.js');
+var adjectives = require('../cloud/adjectives.js');
+var animals = require('../cloud/animals.js');
 
 function get(aliasId, response) {
     var query = new Parse.Query("Alias");
