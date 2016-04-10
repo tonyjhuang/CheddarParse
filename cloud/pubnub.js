@@ -4,69 +4,59 @@ module.exports.sendMessage = sendMessage;
 module.exports.sendPresence = sendPresence;
 module.exports.replayChannel = replayChannel;
 
-// Returns a Promise.
-// See https://parse.com/docs/cloudcode/guide#cloud-code-advanced
-function sendMessage(pubkey, subkey, message) {
-    var pubnub = PubNub({
-        publish_key: pubkey,
-        subscribe_key: subkey
-    });
-
-    var messageEvent = {
-        "objectType": "messageEvent",
-        "object": message,
-        "pn_apns": {
-            "aps": {
-                "alert": {
-                    "title":"New Message",
-                    "body": message.get("alias").get("name") + " says: " + message.get("body")
-                }
-            }
-        },
-        "pn_gcm": {
-            "data": {
-                "payload": {
-                "objectType": "messageEvent",
-                    "object": message
-                }
-            }
+var TYPE = {
+    MESSAGE: {
+        apns_title: "New Message",
+        apns_getBody: function(message) {
+            return message.get("alias").get("name") + " says: " + message.get("body");
+        }
+    },
+    PRESENCE: {
+        apns_title: "Cheddar", // Replace with ChatRoom name.
+        apns_getBody: function(presence) {
+            return presence.get("body");
         }
     }
-
-    return publish(pubkey, subkey, message.get("alias").get("chatRoomId"), messageEvent);
 }
 
-function sendPresence(pubkey, subkey, alias, action) {
-    var verb = action == "join" ? "Joined" : "Left";
+// Takes: {pubkey, subkey, chatEvent}
+function sendMessage(params) {
+    params.type = TYPE.MESSAGE;
+    return sendChatEvent(params);
+}
 
-    var presenceEvent = {
-        "objectType": "presenceEvent",
-        "object": {
-            "action": action,
-            "alias": alias
+// Takes: {pubkey, subkey, chatEvent}
+function sendPresence(params) {
+    params.type = TYPE.PRESENCE;
+    return sendChatEvent(params);
+}
+
+// Takes: {pubkey, subkey, chatEvent, type}
+function sendChatEvent(params) {
+    var payload = {
+        "objectType": "ChatEvent",
+        "object": params.chatEvent,
+        "pn_apns": {
+            "aps": {
+                "alert": {
+                    "title": params.type.apns_title,
+                    "body": params.type.apns_getBody(params.chatEvent)
+                }
+            }
         },
         "pn_gcm": {
             "data": {
                 "payload": {
-                    "objectType": "presenceEvent",
-                    "object": {
-                        "action": action,
-                        "alias": alias
-                    }
-                }
-            }
-        },
-        "pn_apns": {
-            "aps": {
-                "alert": {
-                    "title":verb,
-                    "body":alias.get("name") + " " + verb.toLowerCase()
+                    "objectType": "ChatEvent",
+                    "object": params.chatEvent
                 }
             }
         }
     }
 
-    return publish(pubkey, subkey, alias.get("chatRoomId"), presenceEvent);
+    var chatRoomId = params.chatEvent.get("alias").get("chatRoomId");
+
+    return publish(pubkey, subkey, chatRoomId, payload);
 }
 
 // Publish a message through pubnub, returns a Promise.
@@ -79,37 +69,33 @@ function publish(pubkey, subkey, channel, payload) {
     }).publish({
         channel: channel,
         message: payload,
-        callback: function (result) {
-            promise.resolve(result);
-        },
-        error: function(error) {
-            promise.reject(error);
-        }
+        callback: promise.resolve,
+        error: promise.reject
     });
 
     return promise;
 }
 
-function replayChannel(subkey, channel, startTimeToken, endTimeToken, count) {
+// Replays events from a given pubnub channel.
+// Takes: {subkey, channel, startTimeToken, endTimeToken, count}
+function replayChannel(params) {
     var pubnub = PubNub({
-        subscribe_key: subkey
+        subscribe_key: params.subkey
     });
 
     var promise = new Parse.Promise();
 
     pubnub.history({
-        channel: channel,
-        count: count,
-        start:startTimeToken,
-        end:endTimeToken,
+        channel: params.channel,
+        count: params.count,
+        start: params.startTimeToken,
+        end: params.endTimeToken,
         callback: function(result) {
             promise.resolve({"events":result[0],
                              "startTimeToken":result[1],
                              "endTimeToken":result[2]});
         },
-        error: function(error) {
-            promise.reject(error);
-        }
+        error: promise.reject
     });
 
     return promise;

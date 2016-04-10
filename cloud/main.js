@@ -8,8 +8,8 @@
 */
 
 var Alias = require('cloud/alias.js');
+var ChatEvent = require('cloud/chatevent.js');
 var ChatRoom = require('cloud/chatroom.js');
-var Message = require('cloud/message.js');
 var Pubnub = require('cloud/pubnub.js');
 var User = require('cloud/user.js');
 var UserCount = require('cloud/usercount.js');
@@ -27,6 +27,7 @@ Parse.Cloud.define("hello", function(request, response) {
 // {"events":[{event}, {event}],
 //   "startTimeToken": "00000",
 //   "endTimeToken": "00000"}
+
 Parse.Cloud.define("replayEvents", function(request, response) {
     var requiredParams = ["count", "aliasId", "subkey"];
     var params = request.params;
@@ -51,7 +52,6 @@ Parse.Cloud.define("replayEvents", function(request, response) {
                              endTimeToken,
                              count)
             .then(response.success, response.error);
-
     }, response.error);
 });
 
@@ -80,6 +80,7 @@ Parse.Cloud.afterSave(Parse.User, function(request) {
     UserCount.increment().then(console.log, console.error);
 });
 
+// Useful for validating user ids.
 Parse.Cloud.define("findAlias", function(request, response) {
     var requiredParams = ["aliasId"];
     var params = request.params;
@@ -87,9 +88,17 @@ Parse.Cloud.define("findAlias", function(request, response) {
     Alias.get(params.aliasId).then(response.success, response.error);
 });
 
+// Useful for validating user ids.
+Parse.Cloud.define("findUser", function(request, response) {
+    var requiredParams = ["userId"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+    User.get(params.userId, wrap(response));
+});
+
 // Sends a message through pubnub, persists it through parse.
 // Takes: {body: string, aliasId: string, pubkey: string, subkey: string}
-// Returns: Message
+// Returns: ChatEvent (Message)
 Parse.Cloud.define("sendMessage", function(request, response) {
     var requiredParams = ["pubkey", "subkey", "body", "aliasId"];
     var params = request.params;
@@ -101,7 +110,7 @@ Parse.Cloud.define("sendMessage", function(request, response) {
     var subkey = params.subkey;
 
     Alias.get(aliasId).then(function(alias) {
-        return Message.create(alias, body);
+        return ChatEvent.createMessage(alias, body);
     }).then(function(message) {
         // Nested promise to keep message in scope.
         Pubnub.sendMessage(pubkey,subkey,message).then(function(result) {
@@ -110,7 +119,6 @@ Parse.Cloud.define("sendMessage", function(request, response) {
         }, response.error);
     }, response.error)
 });
-
 
 // Takes: {userId: string, maxOccupancy: int}
 // Returns: ChatRoom
@@ -147,15 +155,19 @@ Parse.Cloud.define("joinNextAvailableChatRoom", function(request, response) {
         return ChatRoom.getNextAvailableChatRoom(user, maxOccupancy);
 
     }).then(function(chatRoom) {
-        return Alias.create(userId, chatRoom.id)
+        return Alias.create(userId, chatRoom.id);
+
     }).then(function(alias) {
-        Pubnub.sendPresence(pubkey, subkey, alias, "join").then(function(result) {
-            response.success(alias);
+        return ChatEvent.createJoinPresence(alias);
 
-        }, response.error);
+    }).then(function(presence) {
+        Pubnub.sendPresence({
+            pubkey: pubkey,
+            subkey: subkey,
+            chatEvent: presence
+        }).then(response.success, response.error);
+
     }, response.error);
-
-
 });
 
 // Removes a User from a ChatRoom by deactivating the active Alias and
@@ -172,10 +184,17 @@ Parse.Cloud.define("leaveChatRoom", function (request, response) {
     var subkey = params.subkey;
 
     Alias.deactivate(aliasId).then(function(alias) {
-        Pubnub.sendPresence(pubkey, subkey, alias, "leave").then(function(result) {
-            response.success(alias);
+        return ChatEvent.createLeavePresence(alias);
 
-        }, response.error);
+    }).then(function(presence) {
+        Pubnub.sendPresence({pubkey: pubkey,
+                             subkey: subkey,
+                             chatEvent: presence
+                            }).then(function(result) {
+                                // Return the Alias instead of the pubnub result.
+                                response.success(presence.get("alias"));
+                            }, response.error);
+
     }, response.error);
 });
 
