@@ -11,12 +11,10 @@ var connect = require('../node_modules/mongodb').connect;
 
 
 
-
 describe('User', function() {
     before(function (done) {
         connect('mongodb://localhost:27017/dev', function(err, db) {
           databaseCleaner.clean(db, function() {
-            console.log('done');
             db.close();
             done();
           });

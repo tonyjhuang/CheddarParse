@@ -7,12 +7,12 @@ curl -X POST \
  https://api.parse.com/1/functions/hello
 */
 
-var Alias = require('../cloud/alias.js');
-var ChatRoom = require('../cloud/chatroom.js');
-var Message = require('../cloud/message.js');
-var Pubnub = require('../cloud/pubnub.js');
-var User = require('../cloud/user.js');
-var UserCount = require('../cloud/usercount.js');
+var Alias = require('cloud/alias.js');
+var ChatRoom = require('cloud/chatroom.js');
+var Message = require('cloud/message.js');
+var Pubnub = require('cloud/pubnub.js');
+var User = require('cloud/user.js');
+var UserCount = require('cloud/usercount.js');
 
 
 // Use Parse.Cloud.define to define as many cloud functions as you want.
@@ -90,7 +90,7 @@ Parse.Cloud.define("findAlias", function(request, response) {
 // Sends a message through pubnub, persists it through parse.
 // Takes: {body: string, aliasId: string, pubkey: string, subkey: string}
 // Returns: Message
-Parse.Cloud.define("w", function(request, response) {
+Parse.Cloud.define("sendMessage", function(request, response) {
     var requiredParams = ["pubkey", "subkey", "body", "aliasId"];
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
