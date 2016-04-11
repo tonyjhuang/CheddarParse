@@ -1,3 +1,4 @@
+/*
 var chai = require('chai');
 var chaiHttp = require('chai-http');
 var server = require('../index');
@@ -55,3 +56,4 @@ describe('User Endpoint Test', function() {
         });
     });
 });
+*/
