@@ -1,6 +1,7 @@
 module.exports.createMessage = createMessage;
 module.exports.createJoinPresence = createJoinPresence;
 module.exports.createLeavePresence = createLeavePresence;
+
 const TYPE = {
     MESSAGE: {text: "MESSAGE"},
     PRESENCE: {text: "PRESENCE"}
@@ -11,7 +12,7 @@ const P_SUBTYPE = {
     LEAVE: {text: " has left"}
 };
 
-function createMessage(alias, body, response) {
+function createMessage(alias, body) {
     var Message = Parse.Object.extend("ChatEvent");
     var message = new Message();
 
@@ -19,19 +20,19 @@ function createMessage(alias, body, response) {
     message.set("body", body);
     message.set("alias", alias);
 
-    message.save(null, response);
+    return message.save(null);
 }
 
 
-function createLeavePresence(alias, response) {
-    createPresence(alias, P_SUBTYPE.LEAVE, response);
+function createLeavePresence(alias) {
+    return createPresence(alias, P_SUBTYPE.LEAVE);
 }
 
-function createJoinPresence(alias, response) {
-    createPresence(alias, P_SUBTYPE.JOIN, response);
+function createJoinPresence(alias) {
+    return createPresence(alias, P_SUBTYPE.JOIN);
 }
 
-function createPresence(alias, subtype, response) {
+function createPresence(alias, subtype) {
     var Presence = Parse.Object.extend("ChatEvent");
     var presence = new Presence();
 
@@ -39,5 +40,5 @@ function createPresence(alias, subtype, response) {
     presence.set("body", alias.get("name") + subtype.text);
     presence.set("alias", alias);
 
-    presence.save(null, response);
+    return presence.save(null);
 }

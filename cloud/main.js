@@ -46,12 +46,12 @@ Parse.Cloud.define("replayEvents", function(request, response) {
             ? params.endTimeToken
             : alias.get("createdAt").getTime() * 10000;
 
-        Pubnub.replayChannel(subkey,
-                             chatRoomId,
-                             startTimeToken,
-                             endTimeToken,
-                             count)
-            .then(response.success, response.error);
+        Pubnub.replayChannel({subkey: subkey,
+                              channel: chatRoomId,
+                              startTimeToken: startTimeToken,
+                              endTimetoken: endTimeToken,
+                              count: count
+                             }).then(response.success, response.error);
     }, response.error);
 });
 
@@ -113,7 +113,11 @@ Parse.Cloud.define("sendMessage", function(request, response) {
         return ChatEvent.createMessage(alias, body);
     }).then(function(message) {
         // Nested promise to keep message in scope.
-        Pubnub.sendMessage(pubkey,subkey,message).then(function(result) {
+        Pubnub.sendMessage({
+            pubkey: pubkey,
+            subkey: subkey,
+            chatEvent: message
+        }).then(function(result) {
             response.success(message)
 
         }, response.error);
