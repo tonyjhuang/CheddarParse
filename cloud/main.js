@@ -27,6 +27,7 @@ Parse.Cloud.define("hello", function(request, response) {
 // {"events":[{event}, {event}],
 //   "startTimeToken": "00000",
 //   "endTimeToken": "00000"}
+
 Parse.Cloud.define("replayEvents", function(request, response) {
     var requiredParams = ["count", "aliasId", "subkey"];
     var params = request.params;
@@ -45,12 +46,12 @@ Parse.Cloud.define("replayEvents", function(request, response) {
             ? params.endTimeToken
             : alias.get("createdAt").getTime() * 10000;
 
-        Pubnub.replayChannel(subkey,
-                             chatRoomId,
-                             startTimeToken,
-                             endTimeToken,
-                             count)
-            .then(response.success, response.error);
+        Pubnub.replayChannel({subkey: subkey,
+                              channel: chatRoomId,
+                              startTimeToken: startTimeToken,
+                              endTimetoken: endTimeToken,
+                              count: count
+                             }).then(response.success, response.error);
     }, response.error);
 });
 
@@ -64,7 +65,6 @@ Parse.Cloud.define("getChatRooms", function(request, response) {
             }));
         }));
     }));
-});
 
 // Creates a new User object.
 Parse.Cloud.define("registerNewUser", function(request, response) {
@@ -124,13 +124,16 @@ Parse.Cloud.define("sendMessage", function(request, response) {
         return ChatEvent.createMessage(alias, body);
     }).then(function(message) {
         // Nested promise to keep message in scope.
-        Pubnub.sendMessage(pubkey,subkey,message).then(function(result) {
+        Pubnub.sendMessage({
+            pubkey: pubkey,
+            subkey: subkey,
+            chatEvent: message
+        }).then(function(result) {
             response.success(message)
 
         }, response.error);
     }, response.error)
 });
-
 
 // Takes: {userId: string, maxOccupancy: int}
 // Returns: ChatRoom

@@ -1,6 +1,7 @@
 module.exports.createMessage = createMessage;
 module.exports.createJoinPresence = createJoinPresence;
 module.exports.createLeavePresence = createLeavePresence;
+
 const TYPE = {
     MESSAGE: {text: "MESSAGE"},
     PRESENCE: {text: "PRESENCE"}
