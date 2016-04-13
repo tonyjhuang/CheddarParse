@@ -12,13 +12,14 @@ const P_SUBTYPE = {
     LEAVE: {text: " has left"}
 };
 
-function createMessage(alias, body) {
+function createMessage(alias, body, messageId) {
     var Message = Parse.Object.extend("ChatEvent");
     var message = new Message();
 
     message.set("type", TYPE.MESSAGE.text);
     message.set("body", body);
     message.set("alias", alias);
+    message.set("messageId", messageId);
 
     return message.save(null);
 }

@@ -100,7 +100,7 @@ Parse.Cloud.define("findUser", function(request, response) {
 // Takes: {body: string, aliasId: string, pubkey: string, subkey: string}
 // Returns: ChatEvent (Message)
 Parse.Cloud.define("sendMessage", function(request, response) {
-    var requiredParams = ["pubkey", "subkey", "body", "aliasId"];
+    var requiredParams = ["pubkey", "subkey", "body", "aliasId", "messageId"];
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
 
@@ -108,9 +108,10 @@ Parse.Cloud.define("sendMessage", function(request, response) {
     var aliasId = params.aliasId;
     var pubkey = params.pubkey;
     var subkey = params.subkey;
+    var messageId = params.messageId;
 
     Alias.get(aliasId).then(function(alias) {
-        return ChatEvent.createMessage(alias, body);
+        return ChatEvent.createMessage(alias, body, messageId);
     }).then(function(message) {
         // Nested promise to keep message in scope.
         Pubnub.sendMessage({
