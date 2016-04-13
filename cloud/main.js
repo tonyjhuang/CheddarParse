@@ -169,7 +169,10 @@ Parse.Cloud.define("joinNextAvailableChatRoom", function(request, response) {
             pubkey: pubkey,
             subkey: subkey,
             chatEvent: presence
-        }).then(response.success, response.error);
+        }).then(function(result) {
+            // Return the Alias instead of the pubnub result.
+            response.success(presence.get("alias"));
+        }, response.error);
 
     }, response.error);
 });
