@@ -9,7 +9,8 @@ var TYPE = {
         apns_title: "New Message",
         apns_getBody: function(message) {
             return message.get("alias").get("name") + " says: " + message.get("body");
-        }
+        },
+        apns_sound: "default"
     },
     PRESENCE: {
         apns_title: "Cheddar", // Replace with ChatRoom name.
@@ -41,7 +42,8 @@ function sendChatEvent(params) {
                 "alert": {
                     "title": params.type.apns_title,
                     "body": params.type.apns_getBody(params.chatEvent)
-                }
+                },
+                "sound": params.type.apns_sound
             }
         },
         "pn_gcm": {
