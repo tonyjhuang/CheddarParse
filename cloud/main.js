@@ -33,7 +33,7 @@ Parse.Cloud.define("replayEvents", function(request, response) {
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
 
-    var count = params.count;
+    var count = params.count ? params.count : 9999;
     var aliasId = params.aliasId;
     var subkey = params.subkey;
 
