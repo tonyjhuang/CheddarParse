@@ -49,7 +49,7 @@ Parse.Cloud.define("replayEvents", function(request, response) {
         Pubnub.replayChannel({subkey: subkey,
                               channel: chatRoomId,
                               startTimeToken: startTimeToken,
-                              endTimetoken: endTimeToken,
+                              endTimeToken: endTimeToken,
                               count: count
                              }).then(response.success, response.error);
     }, response.error);
