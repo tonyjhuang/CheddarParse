@@ -29,7 +29,7 @@ Parse.Cloud.define("hello", function(request, response) {
 //   "endTimeToken": "00000"}
 
 Parse.Cloud.define("replayEvents", function(request, response) {
-    var requiredParams = ["count", "aliasId", "subkey"];
+    var requiredParams = ["aliasId", "subkey"];
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
 
