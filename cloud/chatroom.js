@@ -18,6 +18,7 @@ function getNextAvailableChatRoom(user, maxOccupancy) {
     query.doesNotMatchKeyInQuery("objectId", "chatRoomId", aliasQuery);
     query.equalTo("maxOccupancy", maxOccupancy);
     query.notEqualTo("numOccupants", 0);
+    query.lessThan("numOccupants", maxOccupancy);
     query.ascending("numOccupants");
 
     return query.first().then(function(chatRoom) {
