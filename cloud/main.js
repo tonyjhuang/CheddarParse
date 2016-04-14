@@ -158,13 +158,12 @@ Parse.Cloud.define("joinNextAvailableChatRoom", function(request, response) {
 
     User.get(userId).then(function(user) {
         return ChatRoom.getNextAvailableChatRoom(user, maxOccupancy);
-
     }).then(function(chatRoom) {
-        return Alias.create(userId, chatRoom.id);
-
+        return ChatRoom.getAvailableColorId(chatRoom).then(function(colorId) {
+            return Alias.create(userId, chatRoom.id, colorId);
+        });
     }).then(function(alias) {
         return ChatEvent.createJoinPresence(alias);
-
     }).then(function(presence) {
         Pubnub.sendPresence({
             pubkey: pubkey,

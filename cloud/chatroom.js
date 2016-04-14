@@ -1,5 +1,6 @@
 module.exports.get = get;
 module.exports.getNextAvailableChatRoom = getNextAvailableChatRoom;
+module.exports.getAvailableColorId = getAvailableColorId;
 
 function get(chatRoomId) {
     var query = new Parse.Query("ChatRoom");
@@ -39,4 +40,30 @@ function createChatRoom(maxOccupancy) {
     chatRoom.set("numOccupants", 0);
 
     return chatRoom.save(null);
+}
+
+
+function getAvailableColorId(chatRoom) {
+    var aliasQuery = new Parse.Query("Alias");
+    aliasQuery.equalTo("chatRoomId", chatRoom.id);
+    aliasQuery.equalTo("active", true);
+
+    return aliasQuery.find().then(function(aliases){
+        var allColorIds = [];
+        for (var i = 0; i <= chatRoom.get("maxOccupancy") - 1; i++) {
+            allColorIds.push(i);
+        }
+
+        var usedIds = [];
+        for (aliasIdx in aliases) {
+            var alias = aliases[aliasIdx];
+            usedIds.push(alias.get("colorId"));
+        }
+
+        var availableIds = allColorIds.filter( function( el ) {
+          return usedIds.indexOf( el ) < 0;
+        });
+
+        return availableIds[0]
+    });
 }

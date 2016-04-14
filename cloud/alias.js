@@ -6,8 +6,8 @@ module.exports.generateName = generateName;
 module.exports.getActive = getActive;
 module.exports.deactivate = deactivate;
 
-var adjectives = require('../cloud/adjectives.js');
-var animals = require('../cloud/animals.js');
+var adjectives = require('cloud/adjectives.js');
+var animals = require('cloud/animals.js');
 
 function get(aliasId) {
     var query = new Parse.Query("Alias");
@@ -30,7 +30,7 @@ function deactivate(aliasId) {
 }
 
 // Creates and returns a new active Alias.
-function create(userId, chatRoomId) {
+function create(userId, chatRoomId, colorId) {
     var Alias = Parse.Object.extend("Alias");
     var alias = new Alias();
 
@@ -38,6 +38,7 @@ function create(userId, chatRoomId) {
     alias.set("active", true);
     alias.set("userId", userId);
     alias.set("chatRoomId", chatRoomId);
+    alias.set("colorId", colorId);
 
     return alias.save(null);
 }
