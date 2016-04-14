@@ -27,12 +27,13 @@ Parse.Cloud.define("hello", function(request, response) {
 // {"events":[{event}, {event}],
 //   "startTimeToken": "00000",
 //   "endTimeToken": "00000"}
+
 Parse.Cloud.define("replayEvents", function(request, response) {
-    var requiredParams = ["count", "aliasId", "subkey"];
+    var requiredParams = ["aliasId", "subkey"];
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
 
-    var count = params.count;
+    var count = params.count ? params.count : 9999;
     var aliasId = params.aliasId;
     var subkey = params.subkey;
 
@@ -45,12 +46,12 @@ Parse.Cloud.define("replayEvents", function(request, response) {
             ? params.endTimeToken
             : alias.get("createdAt").getTime() * 10000;
 
-        Pubnub.replayChannel(subkey,
-                             chatRoomId,
-                             startTimeToken,
-                             endTimeToken,
-                             count)
-            .then(response.success, response.error);
+        Pubnub.replayChannel({subkey: subkey,
+                              channel: chatRoomId,
+                              startTimeToken: startTimeToken,
+                              endTimeToken: endTimeToken,
+                              count: count
+                             }).then(response.success, response.error);
     }, response.error);
 });
 
@@ -111,7 +112,7 @@ Parse.Cloud.define("findUser", function(request, response) {
 // Takes: {body: string, aliasId: string, pubkey: string, subkey: string}
 // Returns: ChatEvent (Message)
 Parse.Cloud.define("sendMessage", function(request, response) {
-    var requiredParams = ["pubkey", "subkey", "body", "aliasId"];
+    var requiredParams = ["pubkey", "subkey", "body", "aliasId", "messageId"];
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
 
@@ -119,18 +120,22 @@ Parse.Cloud.define("sendMessage", function(request, response) {
     var aliasId = params.aliasId;
     var pubkey = params.pubkey;
     var subkey = params.subkey;
+    var messageId = params.messageId;
 
     Alias.get(aliasId).then(function(alias) {
-        return ChatEvent.createMessage(alias, body);
+        return ChatEvent.createMessage(alias, body, messageId);
     }).then(function(message) {
         // Nested promise to keep message in scope.
-        Pubnub.sendMessage(pubkey,subkey,message).then(function(result) {
+        Pubnub.sendMessage({
+            pubkey: pubkey,
+            subkey: subkey,
+            chatEvent: message
+        }).then(function(result) {
             response.success(message)
 
         }, response.error);
     }, response.error)
 });
-
 
 // Takes: {userId: string, maxOccupancy: int}
 // Returns: ChatRoom
@@ -168,17 +173,17 @@ Parse.Cloud.define("joinNextAvailableChatRoom", function(request, response) {
 
     }).then(function(chatRoom) {
         return Alias.create(userId, chatRoom.id);
-
     }).then(function(alias) {
         return ChatEvent.createJoinPresence(alias);
-
     }).then(function(presence) {
         Pubnub.sendPresence({
             pubkey: pubkey,
             subkey: subkey,
             chatEvent: presence
-        }).then(response.success, response.error);
-
+        }).then(function(result) {
+            // Return the Alias instead of the pubnub result.
+            response.success(presence.get("alias"));
+        }, response.error);
     }, response.error);
 });
 

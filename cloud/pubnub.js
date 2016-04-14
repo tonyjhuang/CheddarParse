@@ -9,7 +9,8 @@ var TYPE = {
         apns_title: "New Message",
         apns_getBody: function(message) {
             return message.get("alias").get("name") + " says: " + message.get("body");
-        }
+        },
+        apns_sound: "default"
     },
     PRESENCE: {
         apns_title: "Cheddar", // Replace with ChatRoom name.
@@ -41,7 +42,8 @@ function sendChatEvent(params) {
                 "alert": {
                     "title": params.type.apns_title,
                     "body": params.type.apns_getBody(params.chatEvent)
-                }
+                },
+                "sound": params.type.apns_sound
             }
         },
         "pn_gcm": {
@@ -55,6 +57,8 @@ function sendChatEvent(params) {
     }
 
     var chatRoomId = params.chatEvent.get("alias").get("chatRoomId");
+    var pubkey = params.pubkey;
+    var subkey = params.subkey;
 
     return publish(pubkey, subkey, chatRoomId, payload);
 }
@@ -69,8 +73,12 @@ function publish(pubkey, subkey, channel, payload) {
     }).publish({
         channel: channel,
         message: payload,
-        callback: promise.resolve,
-        error: promise.reject
+        callback: function(result) {
+            promise.resolve(result);
+        },
+        error: function(result) {
+            promise.reject(result);
+        }
     });
 
     return promise;
@@ -95,7 +103,9 @@ function replayChannel(params) {
                              "startTimeToken":result[1],
                              "endTimeToken":result[2]});
         },
-        error: promise.reject
+        error: function(result) {
+            promise.reject(result);
+        }
     });
 
     return promise;
