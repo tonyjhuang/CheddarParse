@@ -7,8 +7,8 @@ module.exports.getActiveForChatRoom = getActiveForChatRoom;
 module.exports.getActiveForUser = getActiveForUser;
 module.exports.deactivate = deactivate;
 
-var adjectives = require('cloud/adjectives.js');
-var animals = require('cloud/animals.js');
+var adjectives = require('../cloud/adjectives.js');
+var animals = require('../cloud/animals.js');
 
 function get(aliasId) {
     var query = new Parse.Query("Alias");
