@@ -25,7 +25,6 @@ function createMessage(alias, body, messageId) {
     return message.save();
 }
 
-
 function createLeavePresence(alias) {
     return createPresence(alias, P_SUBTYPE.LEAVE);
 }
