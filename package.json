@@ -16,12 +16,13 @@
     "kerberos": "~0.0.x",
     "mocha": "^2.4.5",
     "mongodb": "^2.1.16",
+    "nodemon": "^1.9.1",
     "parse": "~1.8.0",
     "parse-server": "~2.2.2",
     "rootpath": "^0.1.2"
   },
   "scripts": {
-    "start": "node index.js",
+    "start": "./node_modules/.bin/nodemon index.js",
     "test": "mocha"
   },
   "engines": {
