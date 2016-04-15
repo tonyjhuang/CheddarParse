@@ -7,19 +7,12 @@ module.exports.getActiveForChatRoom = getActiveForChatRoom;
 module.exports.getActiveForUser = getActiveForUser;
 module.exports.deactivate = deactivate;
 
-var adjectives = require('../cloud/adjectives.js');
-var animals = require('../cloud/animals.js');
+var adjectives = require('cloud/adjectives.js');
+var animals = require('cloud/animals.js');
 
 function get(aliasId) {
     var query = new Parse.Query("Alias");
     return query.get(aliasId);
-}
-
-function getActiveForChatRoom(chatRoomId) {
-    var query = new Parse.Query("Alias");
-    query.equalTo("chatRoomId", chatRoomId);
-    query.equalTo("active", true);
-    return query.find();
 }
 
 function deactivate(aliasId) {
@@ -49,7 +42,8 @@ String.prototype.capitalize = function() {
 
 // Generate new Alias name.
 function generateName() {
-    return adjectives.random().capitalize() + " " + animals.random().capitalize();
+    return adjectives.random().capitalize() + " " +
+        animals.random().capitalize();
 }
 
 // Returns all active Aliases for a given ChatRoom.
@@ -60,10 +54,10 @@ function getActiveForChatRoom(chatRoomId) {
     return query.find();
 }
 
-// Returns all active Aliases for a given User.
+ // Returns all active Aliases for a given User.
 function getActiveForUser(userId) {
     var query = new Parse.Query("Alias");
-    query.equalTo("userId", userId);
     query.equalTo("active", true);
+    query.equalTo("userId", userId);
     return query.find();
 }

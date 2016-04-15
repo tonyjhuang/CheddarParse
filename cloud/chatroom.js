@@ -1,6 +1,5 @@
 module.exports.get = get;
 module.exports.getNextAvailableChatRoom = getNextAvailableChatRoom;
-module.exports.getForAliases = getForAliases;
 
 function get(chatRoomId) {
     var query = new Parse.Query("ChatRoom");
@@ -40,8 +39,4 @@ function createChatRoom(maxOccupancy) {
     chatRoom.set("numOccupants", 0);
 
     return chatRoom.save(null);
-}
-
-function getForAliases(aliases, response) {
-  // map aliases to ids, grab chatrooms.
 }

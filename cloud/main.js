@@ -7,6 +7,7 @@
   https://api.parse.com/1/functions/hello
 */
 
+var _ = require('cloud/utils/underscore.js');
 var Alias = require('cloud/alias.js');
 var ChatEvent = require('cloud/chatevent.js');
 var ChatRoom = require('cloud/chatroom.js');
@@ -55,16 +56,49 @@ Parse.Cloud.define("replayEvents", function(request, response) {
     }, response.error);
 });
 
+// Returns the list of ChatRooms and Aliases that are active for a user,
+// as well as the most recent Message for each ChatRoom.
 // Takes: userId: string
-// Returns: [{alias, chatRoom, message}, ...]
+// Returns: [{alias: Alias, chatRoom: ChatRoom, chatEvent: ChatEvent}, ...]
 Parse.Cloud.define("getChatRooms", function(request, response) {
-    User.get(userId, wrap(response, function(user) {
-        Alias.getActiveForUser(user.id, wrap(response, function(aliases) {
-            ChatRoom.getForAliases(aliases, wrap(response, function(chatRooms) {
-                // do stuff
-            }));
-        }));
-    }));
+    var requiredParams = ["userId"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+
+    Alias.getActiveForUser(params.userId).then(function(aliases) {
+        var chatRoomIds = _.map(aliases, function(a) {
+            return a.get("chatRoomId");
+        });
+        var chatRoomPromises = _.map(chatRoomIds, function(id) {
+            return ChatRoom.get(id);
+        });
+        var chatEventPromises = _.map(chatRoomIds, function(id) {
+            return ChatEvent.getMostRecentForChatRoom(id);
+        });
+
+        Parse.Promise.when(chatRoomPromises).then(function() {
+            var chatRooms = _.values(arguments);
+
+            Parse.Promise.when(chatEventPromises).then(function() {
+                var chatEvents = _.values(arguments);
+                response.success(
+                    formatChatRoomInfo(aliases,chatRooms,chatEvents));
+
+            }, response.error);
+        }, response.error);
+    }, response.error)
+});
+
+function formatChatRoomInfo(aliases, chatRooms, chatEvents) {
+    var zipped = _.zip(aliases, chatRooms, chatEvents);
+    return _.map(zipped, function(zip) {
+        return {
+            "alias": zip[0],
+            "chatRoom": zip[1],
+            "chatEvent": zip[2]
+        };
+    });
+}
 
 // Creates a new User object.
 Parse.Cloud.define("registerNewUser", function(request, response) {
