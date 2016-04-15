@@ -1,9 +1,9 @@
-module.exports.random = function() {
+module.exports.random = () => {
     var index = Math.floor(Math.random() * adjectives.length);
     return adjectives[index].toLowerCase();
 }
 
-var adjectives = [
+const adjectives = [
 "Abaft",
 "Abandoned",
 "Abased",
