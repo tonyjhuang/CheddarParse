@@ -1,5 +1,6 @@
 module.exports.get = get;
 module.exports.getNextAvailableChatRoom = getNextAvailableChatRoom;
+module.exports.getAvailableColorId = getAvailableColorId;
 
 function get(chatRoomId) {
     var query = new Parse.Query("ChatRoom");
@@ -39,4 +40,31 @@ function createChatRoom(maxOccupancy) {
     chatRoom.set("numOccupants", 0);
 
     return chatRoom.save(null);
+}
+
+
+function getAvailableColorId(chatRoom) {
+    var aliasQuery = new Parse.Query("Alias");
+    aliasQuery.equalTo("chatRoomId", chatRoom.id);
+    aliasQuery.equalTo("active", true);
+    aliasQuery.ascending("colorId");
+
+    return aliasQuery.find().then(function(aliases) {
+        var i = 0;
+
+        do {
+            if (i == aliases.length) {
+                return Parse.Promise.as(i);
+            }
+
+            var colorId = aliases[i].get("colorId");
+            if (colorId != i) {
+              return Parse.Promise.as(colorId);
+            }
+            i++;
+        } while(i < chatRoom.get("maxOccupancy"));
+
+        // All colorIds have been assigned.
+        return Parse.Promise.as(-1);
+    });
 }
