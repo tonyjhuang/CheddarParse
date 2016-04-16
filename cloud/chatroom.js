@@ -47,23 +47,24 @@ function getAvailableColorId(chatRoom) {
     var aliasQuery = new Parse.Query("Alias");
     aliasQuery.equalTo("chatRoomId", chatRoom.id);
     aliasQuery.equalTo("active", true);
+    aliasQuery.ascending("colorId");
 
-    return aliasQuery.find().then(function(aliases){
-        var allColorIds = [];
-        for (var i = 0; i <= chatRoom.get("maxOccupancy") - 1; i++) {
-            allColorIds.push(i);
-        }
+    return aliasQuery.find().then(function(aliases) {
+        var i = 0;
 
-        var usedIds = [];
-        for (aliasIdx in aliases) {
-            var alias = aliases[aliasIdx];
-            usedIds.push(alias.get("colorId"));
-        }
+        do {
+            if (i == aliases.length) {
+                return Parse.Promise.as(i);
+            }
 
-        var availableIds = allColorIds.filter( function( el ) {
-          return usedIds.indexOf( el ) < 0;
-        });
+            var colorId = aliases[i].get("colorId");
+            if (colorId != i) {
+              return Parse.Promise.as(colorId);
+            }
+            i++;
+        } while(i <= chatRoom.get("maxOccupancy") - 1);
 
-        return availableIds[0]
+        // All colorIds have been assigned.
+        return Parse.Promise.as(-1);
     });
 }
