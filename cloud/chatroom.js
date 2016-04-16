@@ -62,7 +62,7 @@ function getAvailableColorId(chatRoom) {
               return Parse.Promise.as(colorId);
             }
             i++;
-        } while(i <= chatRoom.get("maxOccupancy") - 1);
+        } while(i < chatRoom.get("maxOccupancy"));
 
         // All colorIds have been assigned.
         return Parse.Promise.as(-1);
