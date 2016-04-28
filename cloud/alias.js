@@ -24,7 +24,7 @@ function deactivate(aliasId) {
 }
 
 // Creates and returns a new active Alias.
-function create(userId, chatRoomId) {
+function create(userId, chatRoomId, colorId) {
     var Alias = Parse.Object.extend("Alias");
     var alias = new Alias();
 
@@ -32,6 +32,7 @@ function create(userId, chatRoomId) {
     alias.set("active", true);
     alias.set("userId", userId);
     alias.set("chatRoomId", chatRoomId);
+    alias.set("colorId", colorId);
 
     return alias.save(null);
 }
