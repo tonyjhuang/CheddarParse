@@ -40,8 +40,9 @@ function createChangeRoomName(alias, name) {
     var event = new ChatEvent();
 
     event.set("type", TYPE.CHANGE_ROOM_NAME.text);
-    event.set("body", alias.get("name") + " changed the room name to " + name);
+    event.set("body", alias.get("name") + " renamed the room to " + name);
     event.set("alias", alias);
+    event.set("roomName", name);
 
     return event.save();
 }
