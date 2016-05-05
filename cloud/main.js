@@ -7,6 +7,7 @@
   https://api.parse.com/1/functions/hello
 */
 
+var _ = require('cloud/utils/underscore.js');
 var Alias = require('cloud/alias.js');
 var ChatEvent = require('cloud/chatevent.js');
 var ChatRoom = require('cloud/chatroom.js');
@@ -42,9 +43,7 @@ Parse.Cloud.define("replayEvents", function(request, response) {
         var startTimeToken = params.startTimeToken
             ? params.startTimeToken
             : new Date().getTime() * 10000;
-        var endTimeToken = params.endTimeToken
-            ? params.endTimeToken
-            : alias.get("createdAt").getTime() * 10000;
+        var endTimeToken = params.endTimeToken;
 
         Pubnub.replayChannel({subkey: subkey,
                               channel: chatRoomId,
@@ -52,6 +51,80 @@ Parse.Cloud.define("replayEvents", function(request, response) {
                               endTimeToken: endTimeToken,
                               count: count
                              }).then(response.success, response.error);
+    }, response.error);
+});
+
+// Returns the list of ChatRooms and Aliases that are active for a user,
+// as well as the most recent Message for each ChatRoom.
+// Takes: userId: string
+// Returns: [{alias: Alias, chatRoom: ChatRoom, chatEvent: ChatEvent}, ...]
+Parse.Cloud.define("getChatRooms", function(request, response) {
+    var requiredParams = ["userId"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+
+    Alias.getActiveForUser(params.userId).then(function(aliases) {
+        var chatRoomIds = _.map(aliases, function(a) {
+            return a.get("chatRoomId");
+        });
+        var chatRoomPromises = _.map(chatRoomIds, function(id) {
+            return ChatRoom.get(id);
+        });
+        var chatEventPromises = _.map(chatRoomIds, function(id) {
+            return ChatEvent.getMostRecentForChatRoom(id);
+        });
+
+        Parse.Promise.when(chatRoomPromises).then(function() {
+            var chatRooms = _.values(arguments);
+
+            Parse.Promise.when(chatEventPromises).then(function() {
+                var chatEvents = _.values(arguments);
+                response.success(
+                    formatChatRoomInfo(aliases,chatRooms,chatEvents));
+
+            }, response.error);
+        }, response.error);
+    }, response.error)
+});
+
+function formatChatRoomInfo(aliases, chatRooms, chatEvents) {
+    var zipped = _.zip(aliases, chatRooms, chatEvents);
+    return _.map(zipped, function(zip) {
+        return {
+            "alias": zip[0],
+            "chatRoom": zip[1],
+            "chatEvent": zip[2]
+        };
+    });
+}
+
+// Update a ChatRoom's name.
+Parse.Cloud.define("updateChatRoomName", function(request, response) {
+    var requiredParams = ["pubkey", "subkey", "aliasId", "name"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+
+    var pubkey = params.pubkey;
+    var subkey = params.subkey;
+    var aliasId = params.aliasId;
+    var name = params.name;
+
+    Alias.get(aliasId).then(function(alias) {
+        // Set chatroom name.
+        ChatRoom.setName(alias.get("chatRoomId"), name).then(function(chatRoom) {
+            // Create chatevent.
+            ChatEvent.createChangeRoomName(alias, name).then(function(chatEvent) {
+                // Send to Pubnub.
+                Pubnub.sendChangeRoomName({
+                    pubkey: pubkey,
+                    subkey: subkey,
+                    chatEvent: chatEvent
+                }).then(function(result) {
+                    response.success(chatRoom)
+
+                }, response.error);
+            }, response.error);
+        }, response.error);
     }, response.error);
 });
 
@@ -165,22 +238,31 @@ Parse.Cloud.define("joinNextAvailableChatRoom", function(request, response) {
 
     User.get(userId).then(function(user) {
         return ChatRoom.getNextAvailableChatRoom(user, maxOccupancy);
+
     }).then(function(chatRoom) {
         return ChatRoom.getAvailableColorId(chatRoom).then(function(colorId) {
-            return Alias.create(userId, chatRoom.id, colorId);
+            return Alias.create(userId, chatRoom.id, colorId).then(function(alias) {
+                // Update num occupants after creating Alias.
+                return updateChatRoomOccupants(chatRoom.id).then(function(chatRoom) {
+                    console.log(chatRoom);
+                    return Parse.Promise.as(alias);
+                });
+            });
         });
+
     }).then(function(alias) {
         return ChatEvent.createJoinPresence(alias);
+
     }).then(function(presence) {
         Pubnub.sendPresence({
             pubkey: pubkey,
             subkey: subkey,
             chatEvent: presence
+
         }).then(function(result) {
             // Return the Alias instead of the pubnub result.
             response.success(presence.get("alias"));
         }, response.error);
-
     }, response.error);
 });
 
@@ -198,7 +280,10 @@ Parse.Cloud.define("leaveChatRoom", function (request, response) {
     var subkey = params.subkey;
 
     Alias.deactivate(aliasId).then(function(alias) {
-        return ChatEvent.createLeavePresence(alias);
+        var chatRoomId = alias.get("chatRoomId");
+        return updateChatRoomOccupants(chatRoomId).then(function(chatRoom) {
+            return ChatEvent.createLeavePresence(alias);
+        });
 
     }).then(function(presence) {
         Pubnub.sendPresence({pubkey: pubkey,
@@ -212,20 +297,16 @@ Parse.Cloud.define("leaveChatRoom", function (request, response) {
     }, response.error);
 });
 
-// After any Alias is updated, make sure the associated ChatRoom's
-// numOccupants field reflects the number of active members.
-Parse.Cloud.afterSave("Alias", function(request) {
-    var chatRoomId = request.object.get("chatRoomId");
-
-
-    Alias.getActive(chatRoomId).then(function(aliases) {
-        ChatRoom.get(chatRoomId).then(function(chatRoom) {
+// Update a ChatRoom's numOccupants field to reflect
+// the number of active Aliases.
+function updateChatRoomOccupants(chatRoomId) {
+    return Alias.getActiveForChatRoom(chatRoomId).then(function(aliases) {
+        return ChatRoom.get(chatRoomId).then(function(chatRoom) {
             chatRoom.set("numOccupants", aliases.length);
-            chatRoom.save();
-
-        }, console.error);
-    }, console.error);
-});
+            return chatRoom.save();
+        });
+    });
+}
 
 
 // Gets the list of ACTIVE Aliases for a given ChatRoom.
