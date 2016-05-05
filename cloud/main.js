@@ -93,7 +93,14 @@ Parse.Cloud.define("findUser", function(request, response) {
     var requiredParams = ["userId"];
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
-    User.get(params.userId, wrap(response));
+    User.get(params.userId).then(response.success, response.error);
+});
+
+Parse.Cloud.define("findChatRoom", function(request, response) {
+    var requiredParams = ["chatRoomId"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+    ChatRoom.get(params.chatRoomId).then(response.success, response.error);
 });
 
 // Sends a message through pubnub, persists it through parse.
