@@ -54,6 +54,36 @@ Parse.Cloud.define("replayEvents", function(request, response) {
     }, response.error);
 });
 
+// Update a ChatRoom's name.
+Parse.Cloud.define("updateChatRoomName", function(request, response) {
+    var requiredParams = ["pubkey", "subkey", "aliasId", "name"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+
+    var pubkey = params.pubkey;
+    var subkey = params.subkey;
+    var aliasId = params.aliasId;
+    var name = params.name;
+
+    Alias.get(aliasId).then(function(alias) {
+        // Set chatroom name.
+        ChatRoom.setName(alias.get("chatRoomId"), name).then(function(chatRoom) {
+            // Create chatevent.
+            ChatEvent.createChangeRoomName(alias, name).then(function(chatEvent) {
+                // Send to Pubnub.
+                Pubnub.sendChangeRoomName({
+                    pubkey: pubkey,
+                    subkey: subkey,
+                    chatEvent: chatEvent
+                }).then(function(result) {
+                    response.success(chatRoom)
+
+                }, response.error);
+            }, response.error);
+        }, response.error);
+    }, response.error);
+});
+
 // Returns the list of ChatRooms and Aliases that are active for a user,
 // as well as the most recent Message for each ChatRoom.
 // Takes: userId: string
