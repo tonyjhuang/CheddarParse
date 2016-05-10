@@ -71,6 +71,8 @@ Parse.Cloud.define("resendVerificationEmail", function(request, response) {
     checkMissingParams(params, requiredParams, response);
 
     var userId = params.userId;
+
+    Parse.Cloud.useMasterKey();
     User.get(userId).then(function(user) {
         User.updateEmailAddress(userId, user.get("email"))
             .then(response.success, response.error);
