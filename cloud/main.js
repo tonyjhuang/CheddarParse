@@ -63,17 +63,24 @@ Parse.Cloud.define("registerNewUser", function(request, response) {
     }).then(response.success, response.error);
 });
 
+// Resends email verification by resetting a User's email
+// address. Returns the user.
+Parse.Cloud.define("resendVerificationEmail", function(request, response) {
+    var requiredParams = ["userId"]
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+
+    var userId = params.userId;
+    User.get(userId).then(function(user) {
+        User.updateEmailAddress(userId, user.get("email"))
+            .then(response.success, response.error);
+    }, response.error);
+});
+
 // Increment our UserCount on new Parse Users.
 Parse.Cloud.afterSave(Parse.User, function(request) {
     if (request.object.existed()) {
         return;
-    }
-
-    // Wrap console.error in response object.
-    var response = {
-        error: function(error) {
-            console.error(error);
-        }
     }
 
     Parse.Cloud.useMasterKey();
