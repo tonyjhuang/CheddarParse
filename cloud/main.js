@@ -42,9 +42,7 @@ Parse.Cloud.define("replayEvents", function(request, response) {
         var startTimeToken = params.startTimeToken
             ? params.startTimeToken
             : new Date().getTime() * 10000;
-        var endTimeToken = params.endTimeToken
-            ? params.endTimeToken
-            : alias.get("createdAt").getTime() * 10000;
+        var endTimeToken = params.endTimeToken;
 
         Pubnub.replayChannel({subkey: subkey,
                               channel: chatRoomId,
