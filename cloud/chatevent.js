@@ -1,10 +1,12 @@
 module.exports.createMessage = createMessage;
 module.exports.createJoinPresence = createJoinPresence;
 module.exports.createLeavePresence = createLeavePresence;
+module.exports.createChangeRoomName = createChangeRoomName;
 
 const TYPE = {
     MESSAGE: {text: "MESSAGE"},
-    PRESENCE: {text: "PRESENCE"}
+    PRESENCE: {text: "PRESENCE"},
+    CHANGE_ROOM_NAME: {text: "CHANGE_ROOM_NAME"}
 };
 
 const P_SUBTYPE = {
@@ -13,8 +15,8 @@ const P_SUBTYPE = {
 };
 
 function createMessage(alias, body, messageId) {
-    var Message = Parse.Object.extend("ChatEvent");
-    var message = new Message();
+    var ChatEvent = Parse.Object.extend("ChatEvent");
+    var message = new ChatEvent();
 
     message.set("type", TYPE.MESSAGE.text);
     message.set("body", body);
@@ -33,9 +35,20 @@ function createJoinPresence(alias) {
     return createPresence(alias, P_SUBTYPE.JOIN);
 }
 
+function createChangeRoomName(alias, name) {
+    var ChatEvent = Parse.Object.extend("ChatEvent");
+    var event = new ChatEvent();
+
+    event.set("type", TYPE.CHANGE_ROOM_NAME.text);
+    event.set("body", alias.get("name") + " changed the room name to " + name);
+    event.set("alias", alias);
+
+    return event.save();
+}
+
 function createPresence(alias, subtype) {
-    var Presence = Parse.Object.extend("ChatEvent");
-    var presence = new Presence();
+    var ChatEvent = Parse.Object.extend("ChatEvent");
+    var presence = new ChatEvent();
 
     presence.set("type", TYPE.PRESENCE.text);
     presence.set("body", alias.get("name") + subtype.text);

@@ -1,6 +1,7 @@
 module.exports.get = get;
 module.exports.getNextAvailableChatRoom = getNextAvailableChatRoom;
 module.exports.getAvailableColorId = getAvailableColorId;
+module.exports.setName = setName;
 
 function get(chatRoomId) {
     var query = new Parse.Query("ChatRoom");
@@ -39,9 +40,16 @@ function createChatRoom(maxOccupancy) {
     chatRoom.set("maxOccupancy", maxOccupancy);
     chatRoom.set("numOccupants", 0);
 
-    return chatRoom.save(null);
+    return chatRoom.save();
 }
 
+// Sets the name of a ChatRoom, returns the updated ChatRoom.
+function setName(chatRoomId, name) {
+    return get(chatRoomId).then(function(chatRoom) {
+        chatRoom.set("name", name);
+        return chatRoom.save();
+    });
+}
 
 function getAvailableColorId(chatRoom) {
     var aliasQuery = new Parse.Query("Alias");
