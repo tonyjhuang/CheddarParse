@@ -74,8 +74,15 @@ Parse.Cloud.define("resendVerificationEmail", function(request, response) {
 
     Parse.Cloud.useMasterKey();
     User.get(userId).then(function(user) {
-        User.updateEmailAddress(userId, user.get("email"))
-            .then(response.success, response.error);
+        var email = user.get("email")
+        // Need to set email to a different value and then reset it to
+        // the first email address to resend the verification email.
+        // See https://parse.com/questions/verify-email-resend-confirmation-email
+        User.updateEmailAddress(userId, "fuckthis@hacky.shit").then(function(user) {
+            User.updateEmailAddress(userId, email)
+                .then(response.success, response.error);
+
+        }, response.error);
     }, response.error);
 });
 
