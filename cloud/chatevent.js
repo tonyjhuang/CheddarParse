@@ -1,6 +1,7 @@
 module.exports.createMessage = createMessage;
 module.exports.createJoinPresence = createJoinPresence;
 module.exports.createLeavePresence = createLeavePresence;
+module.exports.getMostRecentForChatRoom = getMostRecentForChatRoom;
 
 const TYPE = {
     MESSAGE: {text: "MESSAGE"},
@@ -21,9 +22,8 @@ function createMessage(alias, body, messageId) {
     message.set("alias", alias);
     message.set("messageId", messageId);
 
-    return message.save(null);
+    return message.save();
 }
-
 
 function createLeavePresence(alias) {
     return createPresence(alias, P_SUBTYPE.LEAVE);
@@ -41,5 +41,16 @@ function createPresence(alias, subtype) {
     presence.set("body", alias.get("name") + subtype.text);
     presence.set("alias", alias);
 
-    return presence.save(null);
+    return presence.save();
+}
+
+function getMostRecentForChatRoom(chatRoomId) {
+    var aliasQuery = new Parse.Query("Alias");
+    aliasQuery.equalTo("chatRoomId", chatRoomId);
+
+    var query = new Parse.Query("ChatEvent");
+    query.matchesQuery("alias", aliasQuery);
+    query.descending("createdAt");
+    query.include("alias");
+    return query.first();
 }
