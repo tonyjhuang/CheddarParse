@@ -128,14 +128,6 @@ function formatChatRoomInfo(aliases, chatRooms, chatEvents) {
     });
 }
 
-// Creates a new User object.
-Parse.Cloud.define("registerNewUser", function(request, response) {
-    UserCount.count().then(function(count) {
-        return User.create((count+1).toString())
-
-    }).then(response.success, response.error);
-});
-
 // Resends email verification by resetting a User's email
 // address. Returns the user.
 Parse.Cloud.define("resendVerificationEmail", function(request, response) {
