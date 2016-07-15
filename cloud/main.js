@@ -48,11 +48,15 @@ Parse.Cloud.define("sendFeedback", function(request,response) {
 
 // Send Change School request
 Parse.Cloud.define("sendChangeSchoolRequest", function(request,response) {
-    var requiredParams = ["schoolName"];
+    var requiredParams = ["schoolName", "email"];
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
 
-    sendToFeedbackChannel(params.schoolName);
+    var changeSchoolBody = "Email: " + params.email + "\n";
+        changeSchoolBody += "School Request: " + params.schoolName + "\n";
+        changeSchoolBody += "-----------------------";
+
+    sendToFeedbackChannel(changeSchoolBody);
 });
 
 function sendToFeedbackChannel(body) {
