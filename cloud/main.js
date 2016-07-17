@@ -43,7 +43,7 @@ Parse.Cloud.define("sendFeedback", function(request,response) {
         feedbackBody += params.body + "\n";
         feedbackBody += "-----------------------";
 
-    sendToFeedbackChannel(feedbackBody);
+    sendToFeedbackChannel(feedbackBody, response);
 });
 
 // Send Change School request
@@ -56,10 +56,10 @@ Parse.Cloud.define("sendChangeSchoolRequest", function(request,response) {
         changeSchoolBody += "School Request: " + params.schoolName + "\n";
         changeSchoolBody += "-----------------------";
 
-    sendToFeedbackChannel(changeSchoolBody);
+    sendToFeedbackChannel(changeSchoolBody, response);
 });
 
-function sendToFeedbackChannel(body) {
+function sendToFeedbackChannel(body, response) {
     Parse.Cloud.httpRequest({
         method: 'POST',
         url: 'https://hooks.slack.com/services/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',
