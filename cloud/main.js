@@ -182,25 +182,33 @@ function formatChatRoomInfo(aliases, chatRooms, chatEvents) {
     });
 }
 
-// Creates a new User object.
-Parse.Cloud.define("registerNewUser", function(request, response) {
-    UserCount.count().then(function(count) {
-        return User.create((count+1).toString())
+// Resends email verification by resetting a User's email
+// address. Returns the user.
+Parse.Cloud.define("resendVerificationEmail", function(request, response) {
+    var requiredParams = ["userId"]
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
 
-    }).then(response.success, response.error);
+    var userId = params.userId;
+
+    Parse.Cloud.useMasterKey();
+    User.get(userId).then(function(user) {
+        var email = user.get("email")
+        // Need to set email to a different value and then reset it to
+        // the first email address to resend the verification email.
+        // See https://parse.com/questions/verify-email-resend-confirmation-email
+        User.updateEmailAddress(userId, "fuckthis@hacky.shit").then(function(user) {
+            User.updateEmailAddress(userId, email)
+                .then(response.success, response.error);
+
+        }, response.error);
+    }, response.error);
 });
 
 // Increment our UserCount on new Parse Users.
 Parse.Cloud.afterSave(Parse.User, function(request) {
     if (request.object.existed()) {
         return;
-    }
-
-    // Wrap console.error in response object.
-    var response = {
-        error: function(error) {
-            console.error(error);
-        }
     }
 
     Parse.Cloud.useMasterKey();

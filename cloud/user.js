@@ -1,5 +1,6 @@
 module.exports.get = get;
 module.exports.create = create;
+module.exports.updateEmailAddress = updateEmailAddress;
 
 function get(userId) {
     var query = new Parse.Query(Parse.User);
@@ -12,4 +13,11 @@ function create(username) {
     user.set('password', 'password');
 
     return user.save(null);
+}
+
+function updateEmailAddress(userId, email) {
+    return get(userId).then(function(user) {
+        user.set("email", email);
+        return user.save();
+    });
 }
