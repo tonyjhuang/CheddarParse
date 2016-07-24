@@ -22,6 +22,60 @@ Parse.Cloud.define("hello", function(request, response) {
     response.success(Alias.generateName());
 });
 
+
+// Return minimum ios build number
+// used to force upgrades
+Parse.Cloud.define("minimumIosBuildNumber", function(request, response) {
+    response.success(15);
+});
+
+// Send Feedback to Slack Channel
+Parse.Cloud.define("sendFeedback", function(request,response) {
+    var requiredParams = ["version", "build", "userId", "chatRoomId","aliasName", "body", "platform"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+
+    var feedbackBody = "Platform: " + params.platform + "\n";
+        feedbackBody += "Version: " + params.version + "\n";
+        feedbackBody += "Build: " + params.build + "\n";
+        feedbackBody += "UserId: " + params.userId + "\n";
+        feedbackBody += "ChatRoomId: " + params.chatRoomId + "\n";
+        feedbackBody += "AliasName: " + params.aliasName + "\n";
+        feedbackBody += params.body + "\n";
+        feedbackBody += "-----------------------";
+
+    sendToFeedbackChannel(feedbackBody, response);
+});
+
+// Send Change School request
+Parse.Cloud.define("sendChangeSchoolRequest", function(request,response) {
+    var requiredParams = ["schoolName", "email", "platform"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+
+    var changeSchoolBody = "Platform: " + params.platform + "\n";
+        changeSchoolBody += "Email: " + params.email + "\n";
+        changeSchoolBody += "School Request: " + params.schoolName + "\n";
+        changeSchoolBody += "-----------------------";
+
+    sendToFeedbackChannel(changeSchoolBody, response);
+});
+
+function sendToFeedbackChannel(body, response) {
+    Parse.Cloud.httpRequest({
+        method: 'POST',
+        url: 'https://hooks.slack.com/services/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',
+        body: "{\"text\":\"" + body + "\"}",
+        headers: {
+            'Content-Type': 'application/json;charset=utf-8'
+        },
+    }).then(function(httpResponse) {
+        response.success(httpResponse.text);
+    }, function(httpResponse) {
+        response.error(httpResponse.text);
+    });
+}
+
 // Replays events in a channel for an alias
 // Optional params: startTimeToken, endTimeToken
 // Response Payload:
