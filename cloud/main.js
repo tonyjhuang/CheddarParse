@@ -22,11 +22,22 @@ Parse.Cloud.define("hello", function(request, response) {
     response.success(Alias.generateName());
 });
 
-
 // Return minimum ios build number
 // used to force upgrades
 Parse.Cloud.define("minimumIosBuildNumber", function(request, response) {
     response.success(15);
+});
+
+Parse.Cloud.define("checkRegistrationCode", function(request, response) {
+    var requiredParams = ["registrationCode"]
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+
+    var validRegistrationCodes = ["test"]
+    var registrationCode = params.registrationCode
+    var isValidCode = validRegistrationCodes.indexOf(registrationCode) >= 0
+
+    response.success(isValidCode);
 });
 
 // Send Feedback to Slack Channel
