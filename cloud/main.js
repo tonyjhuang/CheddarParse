@@ -42,11 +42,12 @@ Parse.Cloud.define("checkRegistrationCode", function(request, response) {
 
 // Send Feedback to Slack Channel
 Parse.Cloud.define("sendFeedback", function(request,response) {
-    var requiredParams = ["version", "build", "userId", "chatRoomId","aliasName", "body", "platform"];
+    var requiredParams = ["version", "build", "userId", "chatRoomId","aliasName", "body", "platform", "environment"];
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
 
     var feedbackBody = "Platform: " + params.platform + "\n";
+        feedbackBody += "Environment: " + params.environment + "\n";
         feedbackBody += "Version: " + params.version + "\n";
         feedbackBody += "Build: " + params.build + "\n";
         feedbackBody += "UserId: " + params.userId + "\n";
@@ -60,11 +61,12 @@ Parse.Cloud.define("sendFeedback", function(request,response) {
 
 // Send Change School request
 Parse.Cloud.define("sendChangeSchoolRequest", function(request,response) {
-    var requiredParams = ["schoolName", "email", "platform"];
+    var requiredParams = ["schoolName", "email", "platform", "environment"];
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
 
     var changeSchoolBody = "Platform: " + params.platform + "\n";
+        changeSchoolBody += "Environment: " + params.environment + "\n";
         changeSchoolBody += "Email: " + params.email + "\n";
         changeSchoolBody += "School Request: " + params.schoolName + "\n";
         changeSchoolBody += "-----------------------";
