@@ -11,6 +11,7 @@ var _ = require('cloud/utils/underscore.js');
 var Alias = require('cloud/alias.js');
 var ChatEvent = require('cloud/chatevent.js');
 var ChatRoom = require('cloud/chatroom.js');
+var Feedback = require('cloud/feedback.js');
 var Pubnub = require('cloud/pubnub.js');
 var User = require('cloud/user.js');
 var UserCount = require('cloud/usercount.js');
@@ -40,54 +41,23 @@ Parse.Cloud.define("checkRegistrationCode", function(request, response) {
     response.success(isValidCode);
 });
 
-// Send Feedback to Slack Channel
+// Send generic feedback to Slack channel
+// Optional params: chatRoomId, aliasName
 Parse.Cloud.define("sendFeedback", function(request,response) {
-    var requiredParams = ["version", "build", "userId", "chatRoomId","aliasName", "body", "platform", "environment"];
+    var requiredParams = ["version", "build", "userId", "body", "platform", "environment"];
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
-
-    var feedbackBody = "Platform: " + params.platform + "\n";
-        feedbackBody += "Environment: " + params.environment + "\n";
-        feedbackBody += "Version: " + params.version + "\n";
-        feedbackBody += "Build: " + params.build + "\n";
-        feedbackBody += "UserId: " + params.userId + "\n";
-        feedbackBody += "ChatRoomId: " + params.chatRoomId + "\n";
-        feedbackBody += "AliasName: " + params.aliasName + "\n";
-        feedbackBody += params.body + "\n";
-        feedbackBody += "-----------------------";
-
-    sendToFeedbackChannel(feedbackBody, response);
+    Feedback.feedback(params).then(response.success, response.error)
 });
 
-// Send Change School request
+// Send change school request to Slack channel
 Parse.Cloud.define("sendChangeSchoolRequest", function(request,response) {
     var requiredParams = ["schoolName", "email", "platform", "environment"];
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
-
-    var changeSchoolBody = "Platform: " + params.platform + "\n";
-        changeSchoolBody += "Environment: " + params.environment + "\n";
-        changeSchoolBody += "Email: " + params.email + "\n";
-        changeSchoolBody += "School Request: " + params.schoolName + "\n";
-        changeSchoolBody += "-----------------------";
-
-    sendToFeedbackChannel(changeSchoolBody, response);
+    Feedback.changeSchoolRequest(params).then(response.success, response.error);
 });
 
-function sendToFeedbackChannel(body, response) {
-    Parse.Cloud.httpRequest({
-        method: 'POST',
-        url: 'https://hooks.slack.com/services/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',
-        body: "{\"text\":\"" + body + "\"}",
-        headers: {
-            'Content-Type': 'application/json;charset=utf-8'
-        },
-    }).then(function(httpResponse) {
-        response.success(httpResponse.text);
-    }, function(httpResponse) {
-        response.error(httpResponse.text);
-    });
-}
 
 // Replays events in a channel for an alias
 // Optional params: startTimeToken, endTimeToken
