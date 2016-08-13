@@ -8,11 +8,11 @@ function feedback(params) {
     feedbackBody += "Environment: " + params.environment + "\n";
     feedbackBody += "Version: " + params.version + "\n";
     feedbackBody += "Build: " + params.build + "\n";
-    if(params.userId)
-        feedbackBody += "UserId: " + params.userId + "\n";
-    if(params.chatRoomId)
+    feedbackBody += "UserId: " + params.userId + "\n";
+    if (params.chatRoomId)
         feedbackBody += "ChatRoomId: " + params.chatRoomId + "\n";
-    feedbackBody += "AliasName: " + params.aliasName + "\n";
+    if (params.aliasName)
+        feedbackBody += "AliasName: " + params.aliasName + "\n";
     feedbackBody += params.body + "\n";
     feedbackBody += "-----------------------";
 
