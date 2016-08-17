@@ -34,7 +34,11 @@ Parse.Cloud.define("checkRegistrationCode", function(request, response) {
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
 
-    var validRegistrationCodes = ["test"]
+    var validRegistrationCodes = ["test",
+                                  "appStoreReview",
+                                  "brooklyn",
+                                  "internalTesting"]
+                                  
     var registrationCode = params.registrationCode
     var isValidCode = validRegistrationCodes.indexOf(registrationCode) >= 0
 
