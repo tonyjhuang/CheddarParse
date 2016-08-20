@@ -51,6 +51,7 @@ function createChatRoom(maxOccupancy, env) {
     chatRoom.set("maxOccupancy", maxOccupancy);
     chatRoom.set("numOccupants", 0);
     chatRoom.set("env", env);
+    chatRoom.set("name", "Group Message");
 
     return chatRoom.save();
 }
