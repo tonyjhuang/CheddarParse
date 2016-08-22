@@ -80,7 +80,7 @@ function getAvailableColorId(chatRoom) {
 
             var colorId = aliases[i].get("colorId");
             if (colorId != i) {
-              return Parse.Promise.as(colorId);
+              return Parse.Promise.as(i);
             }
             i++;
         } while(i < chatRoom.get("maxOccupancy"));
