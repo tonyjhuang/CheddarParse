@@ -59,15 +59,17 @@ function createPresence(alias, subtype) {
     return presence.save();
 }
 
-function getMostRecentForChatRoom(chatRoomId, alias) {
+function getMostRecentForChatRoom(alias) {
     var aliasQuery = new Parse.Query("Alias");
-    aliasQuery.equalTo("chatRoomId", chatRoomId);
+    aliasQuery.equalTo("chatRoomId", alias.get("chatRoomId"));
 
     var query = new Parse.Query("ChatEvent");
     query.matchesQuery("alias", aliasQuery);
     query.descending("createdAt");
     query.include("alias");
     
+    // TODO: refactor to use parse methods
+
     var deletedChatEventIds = alias.get("deletedChatEventIds");
 
     return query.find().then(function(chatEvents) {
