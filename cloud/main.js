@@ -62,6 +62,14 @@ Parse.Cloud.define("sendChangeSchoolRequest", function(request,response) {
     Feedback.changeSchoolRequest(params).then(response.success, response.error);
 });
 
+// Send report user request to Slack channel
+Parse.Cloud.define("sendReportUser", function(request,response) {
+    var requiredParams = ["userId", "reportedAliasId", "chatRoomId", "environment"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+    Feedback.reportUserRequest(params).then(response.success, response.error);
+});
+
 
 // Replays events in a channel for an alias
 // Optional params: startTimeToken, endTimeToken
