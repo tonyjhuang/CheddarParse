@@ -1,5 +1,11 @@
 module.exports.feedback = feedback;
 module.exports.changeSchoolRequest = changeSchoolRequest;
+module.exports.reportUserRequest = reportUserRequest;
+
+const CHANNEL_URL = {
+    FEEDBACK: {url: "https://hooks.slack.com/services/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"},
+    REPORT_USER: {url: "https://hooks.slack.com/services/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"},
+};
 
 // Takes: {"version", "build", "userId", "chatRoomId","aliasName",
 //         "body", "platform", "environment"}
@@ -16,7 +22,7 @@ function feedback(params) {
     feedbackBody += params.body + "\n";
     feedbackBody += "-----------------------";
 
-    return sendToFeedbackChannel(feedbackBody);
+    return sendToSlackChannel(CHANNEL_URL.FEEDBACK.url, feedbackBody);
 }
 
 // Takes: {"schoolName", "email", "platform", "environment"}
@@ -27,13 +33,24 @@ function changeSchoolRequest(params) {
     changeSchoolBody += "School Request: " + params.schoolName + "\n";
     changeSchoolBody += "-----------------------";
 
-    return sendToFeedbackChannel(changeSchoolBody);
+    return sendToSlackChannel(CHANNEL_URL.FEEDBACK.url, changeSchoolBody);
 }
 
-function sendToFeedbackChannel(body) {
+// Takes: {"userId", "reportedAliasId", "chatRoomId", "environment"}
+function reportUserRequest(params) {
+    var reportUserBody = "Reporter UserId: " + params.userId + "\n";
+    reportUserBody += "Reported AliasId: " + params.reportedAliasId + "\n";
+    reportUserBody += "ChatRoomId: " + params.chatRoomId + "\n";
+    reportUserBody += "Environment: " + params.environment + "\n";
+    reportUserBody += "-----------------------";
+
+    return sendToSlackChannel(CHANNEL_URL.REPORT_USER.url, reportUserBody);
+}
+
+function sendToSlackChannel(channelUrl, body) {
     return Parse.Cloud.httpRequest({
         method: 'POST',
-        url: 'https://hooks.slack.com/services/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',
+        url: channelUrl,
         body: "{\"text\":\"" + body + "\"}",
         headers: {
             'Content-Type': 'application/json;charset=utf-8'
