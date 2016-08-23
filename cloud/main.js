@@ -141,8 +141,8 @@ Parse.Cloud.define("getChatRooms", function(request, response) {
         var chatRoomPromises = _.map(chatRoomIds, function(id) {
             return ChatRoom.get(id);
         });
-        var chatEventPromises = _.map(chatRoomIds, function(id) {
-            return ChatEvent.getMostRecentForChatRoom(id);
+        var chatEventPromises = _.map(chatRoomIds, function(id, idx) {
+            return ChatEvent.getMostRecentForChatRoom(id, aliases[idx]);
         });
 
         Parse.Promise.when(chatRoomPromises).then(function() {
@@ -356,6 +356,28 @@ function updateChatRoomOccupants(chatRoomId) {
         });
     });
 }
+
+// Removes a User from a ChatRoom by deactivating the active Alias and
+// fires a pubnub presence event.
+// Takes: {aliasId: string, pubkey: string, subkey: string}
+// Returns: Alias
+Parse.Cloud.define("deleteChatEventForAlias", function (request, response) {
+    var requiredParams = ["aliasId","chatEventId"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+
+    Alias.get(params.aliasId).then(function(alias) {
+        var deletedChatEventIds = alias.get("deletedChatEventIds");
+        if (!deletedChatEventIds) {
+            deletedChatEventIds = [];
+        }
+        deletedChatEventIds = deletedChatEventIds.concat([params.chatEventId]);
+        alias.set("deletedChatEventIds", deletedChatEventIds);
+        alias.save().then(function(alias) {
+            response.success(alias);
+        }, response.error);
+    }, response.error);
+});
 
 
 // Gets the list of ACTIVE Aliases for a given ChatRoom.

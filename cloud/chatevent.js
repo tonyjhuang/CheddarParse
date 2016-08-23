@@ -59,7 +59,7 @@ function createPresence(alias, subtype) {
     return presence.save();
 }
 
-function getMostRecentForChatRoom(chatRoomId) {
+function getMostRecentForChatRoom(chatRoomId, alias) {
     var aliasQuery = new Parse.Query("Alias");
     aliasQuery.equalTo("chatRoomId", chatRoomId);
 
@@ -67,5 +67,16 @@ function getMostRecentForChatRoom(chatRoomId) {
     query.matchesQuery("alias", aliasQuery);
     query.descending("createdAt");
     query.include("alias");
-    return query.first();
+    
+    var deletedChatEventIds = alias.get("deletedChatEventIds");
+
+    return query.find().then(function(chatEvents) {
+        for (chatEventIdx in chatEvents) {
+            var chatEvent = chatEvents[chatEventIdx];
+            if (!deletedChatEventIds || deletedChatEventIds.indexOf(chatEvent.id) == -1) {
+                return chatEvent;
+            }
+        }
+        return null;
+    });
 }
