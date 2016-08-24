@@ -59,13 +59,26 @@ function createPresence(alias, subtype) {
     return presence.save();
 }
 
-function getMostRecentForChatRoom(chatRoomId) {
+function getMostRecentForChatRoom(alias) {
     var aliasQuery = new Parse.Query("Alias");
-    aliasQuery.equalTo("chatRoomId", chatRoomId);
+    aliasQuery.equalTo("chatRoomId", alias.get("chatRoomId"));
 
     var query = new Parse.Query("ChatEvent");
     query.matchesQuery("alias", aliasQuery);
     query.descending("createdAt");
     query.include("alias");
-    return query.first();
+    
+    // TODO: refactor to use parse methods
+
+    var deletedChatEventIds = alias.get("deletedChatEventIds");
+
+    return query.find().then(function(chatEvents) {
+        for (chatEventIdx in chatEvents) {
+            var chatEvent = chatEvents[chatEventIdx];
+            if (!deletedChatEventIds || deletedChatEventIds.indexOf(chatEvent.id) == -1) {
+                return chatEvent;
+            }
+        }
+        return null;
+    });
 }

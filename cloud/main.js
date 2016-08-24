@@ -62,6 +62,14 @@ Parse.Cloud.define("sendChangeSchoolRequest", function(request,response) {
     Feedback.changeSchoolRequest(params).then(response.success, response.error);
 });
 
+// Send report user request to Slack channel
+Parse.Cloud.define("sendReportUser", function(request,response) {
+    var requiredParams = ["userId", "reportedAliasId", "chatRoomId", "environment"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+    Feedback.reportUserRequest(params).then(response.success, response.error);
+});
+
 
 // Replays events in a channel for an alias
 // Optional params: startTimeToken, endTimeToken
@@ -141,8 +149,8 @@ Parse.Cloud.define("getChatRooms", function(request, response) {
         var chatRoomPromises = _.map(chatRoomIds, function(id) {
             return ChatRoom.get(id);
         });
-        var chatEventPromises = _.map(chatRoomIds, function(id) {
-            return ChatEvent.getMostRecentForChatRoom(id);
+        var chatEventPromises = _.map(aliases, function(alias) {
+            return ChatEvent.getMostRecentForChatRoom(alias);
         });
 
         Parse.Promise.when(chatRoomPromises).then(function() {
@@ -356,6 +364,23 @@ function updateChatRoomOccupants(chatRoomId) {
         });
     });
 }
+
+// Deletes a chatEvent for an alias by adding the objectId of the chatEvent
+// to a list of deleted events on the alias
+// Takes: {aliasId: string, pubkey: string, subkey: string}
+// Returns: Alias
+Parse.Cloud.define("deleteChatEventForAlias", function (request, response) {
+    var requiredParams = ["aliasId","chatEventId"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+
+    Alias.get(params.aliasId).then(function(alias) {
+        var deletedChatEventIds = alias.get("deletedChatEventIds") || [];
+        deletedChatEventIds.push(params.chatEventId);
+        alias.set("deletedChatEventIds", deletedChatEventIds);
+        alias.save().then(response.success, response.error);
+    }, response.error);
+});
 
 
 // Gets the list of ACTIVE Aliases for a given ChatRoom.
