@@ -400,7 +400,7 @@ Parse.Cloud.define("blockUserForUser", function (request, response) {
             blockedByUserIds.push(params.userId);
         }
         blockedUser.set("blockedByUserIds", blockedByUserIds);
-        blockedUser.save().then(function() {
+        blockedUser.save(null, { useMasterKey: true }).then(function() {
             User.get(params.userId).then(function(user) {
                 var blockedUserIds = user.get("blockedUserIds") || [];
                 if (blockedUserIds.indexOf(params.blockedUserId) == -1) {
