@@ -394,13 +394,22 @@ Parse.Cloud.define("blockUserForUser", function (request, response) {
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
 
-    User.get(params.userId).then(function(user) {
-        var blockedUserIds = user.get("blockedUserIds") || [];
-        if (blockedUserIds.indexOf(params.blockedUserId) == -1) {
-            blockedUserIds.push(params.blockedUserId);
+    User.get(params.blockedUserId).then(function(blockedUser) {
+        var blockedByUserIds = blockedUser.get("blockedByUserIds") || [];
+        if (blockedByUserIds.indexOf(params.userId) == -1) {
+            blockedByUserIds.push(params.userId);
         }
-        user.set("blockedUserIds", blockedUserIds);
-        user.save().then(response.success, response.error);
+        blockedUser.set("blockedByUserIds", blockedByUserIds);
+        blockedUser.save().then(function() {
+            User.get(params.userId).then(function(user) {
+                var blockedUserIds = user.get("blockedUserIds") || [];
+                if (blockedUserIds.indexOf(params.blockedUserId) == -1) {
+                    blockedUserIds.push(params.blockedUserId);
+                }
+                user.set("blockedUserIds", blockedUserIds);
+                user.save().then(response.success, response.error);
+            }, response.error);
+        }, response.error);
     }, response.error);
 });
 
