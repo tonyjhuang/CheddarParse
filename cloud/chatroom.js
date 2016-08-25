@@ -23,27 +23,29 @@ function getNextAvailableChatRoom(user, maxOccupancy) {
     var aliasQuery = new Parse.Query("Alias");
     aliasQuery.equalTo("userId", user.id);
 
+    var blockedAliasQuery = new Parse.Query("Alias");
+    blockedAliasQuery.containedIn("userId", user.get("blockedUserIds") || []);
+    blockedAliasQuery.equalTo("active",true);
+
+    var mainAliasQuery = Parse.Query.or(aliasQuery, blockedAliasQuery);
+
     var query = new Parse.Query("ChatRoom");
     var env = getEnvForRegCode(user.get("registrationCode"));
 
-    // Don't return ChatRooms that this User already has an Alias for.
-    query.doesNotMatchKeyInQuery("objectId", "chatRoomId", aliasQuery);
+    // Don't return ChatRooms that this User already has an Alias for, or that the user has blocked
+    query.doesNotMatchKeyInQuery("objectId", "chatRoomId", mainAliasQuery);
     query.equalTo("maxOccupancy", maxOccupancy);
     query.notEqualTo("numOccupants", 0);
     query.lessThan("numOccupants", maxOccupancy);
     query.ascending("numOccupants");
     query.equalTo("env", env);
 
-    var blockedUserIds = user.get("blockedUserIds");
-
-    return query.find().then(function(chatRooms) {
-        for (chatRoomIdx in chatRooms) {
-            var chatRoom = chatRooms[chatRoomIdx];
-            if (!blockedUserIds || blockedUserIds.indexOf(chatRoom.id) == -1) {
-                return Parse.Promise.as(chatRoom);
-            }
+    return query.first().then(function(chatRoom) {
+        if (chatRoom == undefined) {
+            return createChatRoom(maxOccupancy, env);
+        } else {
+            return Parse.Promise.as(chatRoom);
         }
-        return createChatRoom(maxOccupancy, env);
     });
 }
 

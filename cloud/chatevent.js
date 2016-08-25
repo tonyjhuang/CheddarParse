@@ -67,18 +67,7 @@ function getMostRecentForChatRoom(alias) {
     query.matchesQuery("alias", aliasQuery);
     query.descending("createdAt");
     query.include("alias");
-    
-    // TODO: refactor to use parse methods
+    query.notContainedIn("objectId", alias.get("deletedChatEventIds") || []);
 
-    var deletedChatEventIds = alias.get("deletedChatEventIds");
-
-    return query.find().then(function(chatEvents) {
-        for (chatEventIdx in chatEvents) {
-            var chatEvent = chatEvents[chatEventIdx];
-            if (!deletedChatEventIds || deletedChatEventIds.indexOf(chatEvent.id) == -1) {
-                return chatEvent;
-            }
-        }
-        return null;
-    });
+    return query.first();
 }

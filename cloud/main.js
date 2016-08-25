@@ -376,7 +376,9 @@ Parse.Cloud.define("deleteChatEventForAlias", function (request, response) {
 
     Alias.get(params.aliasId).then(function(alias) {
         var deletedChatEventIds = alias.get("deletedChatEventIds") || [];
-        deletedChatEventIds.push(params.chatEventId);
+        if (deletedChatEventIds.indexOf(params.chatEventId) == -1) {
+            deletedChatEventIds.push(params.chatEventId);
+        }
         alias.set("deletedChatEventIds", deletedChatEventIds);
         alias.save().then(response.success, response.error);
     }, response.error);
@@ -394,7 +396,9 @@ Parse.Cloud.define("blockUserForUser", function (request, response) {
 
     User.get(params.userId).then(function(user) {
         var blockedUserIds = user.get("blockedUserIds") || [];
-        blockedUserIds.push(params.blockedUserId);
+        if (blockedUserIds.indexOf(params.blockedUserId) == -1) {
+            blockedUserIds.push(params.blockedUserId);
+        }
         user.set("blockedUserIds", blockedUserIds);
         user.save().then(response.success, response.error);
     }, response.error);
