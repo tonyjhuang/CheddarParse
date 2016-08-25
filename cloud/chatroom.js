@@ -34,12 +34,16 @@ function getNextAvailableChatRoom(user, maxOccupancy) {
     query.ascending("numOccupants");
     query.equalTo("env", env);
 
-    return query.first().then(function(chatRoom) {
-        if (chatRoom == undefined) {
-            return createChatRoom(maxOccupancy, env);
-        } else {
-            return Parse.Promise.as(chatRoom);
+    var blockedUserIds = user.get("blockedUserIds");
+
+    return query.find().then(function(chatRooms) {
+        for (chatRoomIdx in chatRooms) {
+            var chatRoom = chatRooms[chatRoomIdx];
+            if (!blockedUserIds || blockedUserIds.indexOf(chatRoom.id) == -1) {
+                return Parse.Promise.as(chatRoom);
+            }
         }
+        return createChatRoom(maxOccupancy, env);
     });
 }
 
