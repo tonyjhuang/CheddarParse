@@ -367,7 +367,7 @@ function updateChatRoomOccupants(chatRoomId) {
 
 // Deletes a chatEvent for an alias by adding the objectId of the chatEvent
 // to a list of deleted events on the alias
-// Takes: {aliasId: string, pubkey: string, subkey: string}
+// Takes: {aliasId: string, chatEventId: string}
 // Returns: Alias
 Parse.Cloud.define("deleteChatEventForAlias", function (request, response) {
     var requiredParams = ["aliasId","chatEventId"];
@@ -376,9 +376,40 @@ Parse.Cloud.define("deleteChatEventForAlias", function (request, response) {
 
     Alias.get(params.aliasId).then(function(alias) {
         var deletedChatEventIds = alias.get("deletedChatEventIds") || [];
-        deletedChatEventIds.push(params.chatEventId);
+        if (deletedChatEventIds.indexOf(params.chatEventId) == -1) {
+            deletedChatEventIds.push(params.chatEventId);
+        }
         alias.set("deletedChatEventIds", deletedChatEventIds);
         alias.save().then(response.success, response.error);
+    }, response.error);
+});
+
+
+// Blocks a user by adding the blockedUserId
+// to a list of blocked userIds on the user
+// Takes: {userId: string, blockedUserId: string}
+// Returns: Alias
+Parse.Cloud.define("blockUserForUser", function (request, response) {
+    var requiredParams = ["userId","blockedUserId"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+
+    User.get(params.blockedUserId).then(function(blockedUser) {
+        var blockedByUserIds = blockedUser.get("blockedByUserIds") || [];
+        if (blockedByUserIds.indexOf(params.userId) == -1) {
+            blockedByUserIds.push(params.userId);
+        }
+        blockedUser.set("blockedByUserIds", blockedByUserIds);
+        blockedUser.save(null, { useMasterKey: true }).then(function() {
+            User.get(params.userId).then(function(user) {
+                var blockedUserIds = user.get("blockedUserIds") || [];
+                if (blockedUserIds.indexOf(params.blockedUserId) == -1) {
+                    blockedUserIds.push(params.blockedUserId);
+                }
+                user.set("blockedUserIds", blockedUserIds);
+                user.save().then(response.success, response.error);
+            }, response.error);
+        }, response.error);
     }, response.error);
 });
 

@@ -23,11 +23,22 @@ function getNextAvailableChatRoom(user, maxOccupancy) {
     var aliasQuery = new Parse.Query("Alias");
     aliasQuery.equalTo("userId", user.id);
 
+    var blockedAliasQuery = new Parse.Query("Alias");
+    blockedAliasQuery.containedIn("userId", user.get("blockedUserIds") || []);
+    blockedAliasQuery.equalTo("active",true);
+
+    var blockedByAliasQuery = new Parse.Query("Alias");
+    blockedByAliasQuery.containedIn("userId", user.get("blockedByUserIds") || []);
+    blockedByAliasQuery.equalTo("active",true);
+
+    var blockedAliasSubQuery = Parse.Query.or(blockedAliasQuery, blockedByAliasQuery);
+    var mainAliasQuery = Parse.Query.or(aliasQuery, blockedAliasSubQuery);
+
     var query = new Parse.Query("ChatRoom");
     var env = getEnvForRegCode(user.get("registrationCode"));
 
-    // Don't return ChatRooms that this User already has an Alias for.
-    query.doesNotMatchKeyInQuery("objectId", "chatRoomId", aliasQuery);
+    // Don't return ChatRooms that this User already has an Alias for, or that the user has blocked
+    query.doesNotMatchKeyInQuery("objectId", "chatRoomId", mainAliasQuery);
     query.equalTo("maxOccupancy", maxOccupancy);
     query.notEqualTo("numOccupants", 0);
     query.lessThan("numOccupants", maxOccupancy);
