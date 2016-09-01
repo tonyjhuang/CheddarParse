@@ -86,18 +86,30 @@ Parse.Cloud.define("replayEvents", function(request, response) {
     checkMissingParams(params, requiredParams, response);
 
     var count = params.count || 20;
-    var subkey = params.subkey;
-    var startTimeToken = params.startTimeToken ?
-        new Moment(params.startTimeToken).toDate() : new Moment().toDate();
-    var endTimeToken = params.endTimeToken ? new Moment(params.endTimeToken).toDate() : undefined;
     var aliasId = params.aliasId;
 
+    function formatTimeToken(timeToken) {
+        var len = timeToken.length
+        return new Moment(+timeToken.slice(0, len-4)).toDate();
+    }
+
+    if (params.startTimeToken != undefined) {
+        var startTimeToken = formatTimeToken(params.startTimeToken);
+    } else {
+        var startTimeToken = new Moment().toDate();
+    }
+    if (params.endTimeToken != undefined) {
+        var endTimeToken = formatTimeToken(params.endTimeToken);
+    }
 
     ChatEvent.getChatEvents(aliasId, startTimeToken, count, endTimeToken).then(function(chatEvents) {
         chatEvents.reverse(); // Show newest ChatEvent first.
         if (chatEvents.length > 0) {
-            var startTimeToken = new Moment(chatEvents[0].get("createdAt")).toISOString();
-            var endTimeToken = chatEvents[chatEvents.length - 1].get("createdAt").toISOString();
+            // Pretty awful hack but pubnub sends out timestamps in nanoseconds for some reason.
+            var startTimeToken = new Moment(
+                chatEvents[0].get("createdAt")).valueOf() * 10000;
+            var endTimeToken = new Moment(
+                chatEvents[chatEvents.length - 1].get("createdAt")).valueOf() * 10000;
         }
 
         // For backwards compatibility.
