@@ -19,16 +19,16 @@ var User = require('cloud/user.js');
 var UserCount = require('cloud/usercount.js');
 
 
-// Use Parse.Cloud.define to define as many cloud functions as you want.
-// For example:
-Parse.Cloud.define("hello", function(request, response) {
-    response.success(Alias.generateName());
-});
-
 // Return minimum ios build number
 // used to force upgrades
 Parse.Cloud.define("minimumIosBuildNumber", function(request, response) {
     response.success(15);
+});
+
+// Return minimum android build number
+// used to force upgrades
+Parse.Cloud.define("minimumAndroidBuildNumber", function(request, response) {
+    response.success(9);
 });
 
 Parse.Cloud.define("checkRegistrationCode", function(request, response) {
