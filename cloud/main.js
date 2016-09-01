@@ -22,7 +22,7 @@ var UserCount = require('cloud/usercount.js');
 // Return minimum ios build number
 // used to force upgrades
 Parse.Cloud.define("minimumIosBuildNumber", function(request, response) {
-    response.success(15);
+    response.success(43);
 });
 
 // Return minimum android build number
