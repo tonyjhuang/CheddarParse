@@ -26,7 +26,7 @@ Parse.Cloud.define("hello", function(request, response) {
 // Return minimum ios build number
 // used to force upgrades
 Parse.Cloud.define("minimumIosBuildNumber", function(request, response) {
-    response.success(15);
+    response.success(43);
 });
 
 Parse.Cloud.define("checkRegistrationCode", function(request, response) {
