@@ -14,7 +14,7 @@ function get(chatRoomId) {
 function getEnvForRegCode(registrationCode) {
     // Add custom environment mapping here.
     var envMap = {}
-    return envMap[registrationCode] || registrationCode;
+    return envMap[registrationCode] || registrationCode || "";
 }
 
 // Retrieves the next available ChatRoom for the user with the
