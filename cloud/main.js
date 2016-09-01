@@ -13,6 +13,7 @@ var Moment = require('cloud/utils/moment.js');
 var Alias = require('cloud/alias.js');
 var ChatEvent = require('cloud/chatevent.js');
 var ChatRoom = require('cloud/chatroom.js');
+var Feedback = require('cloud/feedback.js');
 var Pubnub = require('cloud/pubnub.js');
 var User = require('cloud/user.js');
 var UserCount = require('cloud/usercount.js');
@@ -24,59 +25,53 @@ Parse.Cloud.define("hello", function(request, response) {
     response.success(Alias.generateName());
 });
 
-
 // Return minimum ios build number
 // used to force upgrades
 Parse.Cloud.define("minimumIosBuildNumber", function(request, response) {
     response.success(15);
 });
 
-// Send Feedback to Slack Channel
+Parse.Cloud.define("checkRegistrationCode", function(request, response) {
+    var requiredParams = ["registrationCode"]
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+
+    var validRegistrationCodes = ["test",
+                                  "appStoreReview",
+                                  "brooklyn",
+                                  "internalTesting"]
+                                  
+    var registrationCode = params.registrationCode
+    var isValidCode = validRegistrationCodes.indexOf(registrationCode) >= 0
+
+    response.success(isValidCode);
+});
+
+// Send generic feedback to Slack channel
+// Optional params: chatRoomId, aliasName
 Parse.Cloud.define("sendFeedback", function(request,response) {
-    var requiredParams = ["version", "build", "userId", "chatRoomId","aliasName", "body", "platform"];
+    var requiredParams = ["version", "build", "userId", "body", "platform", "environment"];
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
-
-    var feedbackBody = "Platform: " + params.platform + "\n";
-        feedbackBody += "Version: " + params.version + "\n";
-        feedbackBody += "Build: " + params.build + "\n";
-        feedbackBody += "UserId: " + params.userId + "\n";
-        feedbackBody += "ChatRoomId: " + params.chatRoomId + "\n";
-        feedbackBody += "AliasName: " + params.aliasName + "\n";
-        feedbackBody += params.body + "\n";
-        feedbackBody += "-----------------------";
-
-    sendToFeedbackChannel(feedbackBody, response);
+    Feedback.feedback(params).then(response.success, response.error)
 });
 
-// Send Change School request
+// Send change school request to Slack channel
 Parse.Cloud.define("sendChangeSchoolRequest", function(request,response) {
-    var requiredParams = ["schoolName", "email", "platform"];
+    var requiredParams = ["schoolName", "email", "platform", "environment"];
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
-
-    var changeSchoolBody = "Platform: " + params.platform + "\n";
-        changeSchoolBody += "Email: " + params.email + "\n";
-        changeSchoolBody += "School Request: " + params.schoolName + "\n";
-        changeSchoolBody += "-----------------------";
-
-    sendToFeedbackChannel(changeSchoolBody, response);
+    Feedback.changeSchoolRequest(params).then(response.success, response.error);
 });
 
-function sendToFeedbackChannel(body, response) {
-    Parse.Cloud.httpRequest({
-        method: 'POST',
-        url: 'https://hooks.slack.com/services/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',
-        body: "{\"text\":\"" + body + "\"}",
-        headers: {
-            'Content-Type': 'application/json;charset=utf-8'
-        },
-    }).then(function(httpResponse) {
-        response.success(httpResponse.text);
-    }, function(httpResponse) {
-        response.error(httpResponse.text);
-    });
-}
+// Send report user request to Slack channel
+Parse.Cloud.define("sendReportUser", function(request,response) {
+    var requiredParams = ["userId", "reportedAliasId", "chatRoomId", "environment"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+    Feedback.reportUserRequest(params).then(response.success, response.error);
+});
+
 
 // Replays events in a channel for an alias
 // Optional params: startTimeToken, endTimeToken
@@ -167,8 +162,8 @@ Parse.Cloud.define("getChatRooms", function(request, response) {
         var chatRoomPromises = _.map(chatRoomIds, function(id) {
             return ChatRoom.get(id);
         });
-        var chatEventPromises = _.map(chatRoomIds, function(id) {
-            return ChatEvent.getMostRecentForChatRoom(id);
+        var chatEventPromises = _.map(aliases, function(alias) {
+            return ChatEvent.getMostRecentForChatRoom(alias);
         });
 
         Parse.Promise.when(chatRoomPromises).then(function() {
@@ -381,6 +376,54 @@ function updateChatRoomOccupants(chatRoomId) {
         });
     });
 }
+
+// Deletes a chatEvent for an alias by adding the objectId of the chatEvent
+// to a list of deleted events on the alias
+// Takes: {aliasId: string, chatEventId: string}
+// Returns: Alias
+Parse.Cloud.define("deleteChatEventForAlias", function (request, response) {
+    var requiredParams = ["aliasId","chatEventId"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+
+    Alias.get(params.aliasId).then(function(alias) {
+        var deletedChatEventIds = alias.get("deletedChatEventIds") || [];
+        if (deletedChatEventIds.indexOf(params.chatEventId) == -1) {
+            deletedChatEventIds.push(params.chatEventId);
+        }
+        alias.set("deletedChatEventIds", deletedChatEventIds);
+        alias.save().then(response.success, response.error);
+    }, response.error);
+});
+
+
+// Blocks a user by adding the blockedUserId
+// to a list of blocked userIds on the user
+// Takes: {userId: string, blockedUserId: string}
+// Returns: Alias
+Parse.Cloud.define("blockUserForUser", function (request, response) {
+    var requiredParams = ["userId","blockedUserId"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+
+    User.get(params.blockedUserId).then(function(blockedUser) {
+        var blockedByUserIds = blockedUser.get("blockedByUserIds") || [];
+        if (blockedByUserIds.indexOf(params.userId) == -1) {
+            blockedByUserIds.push(params.userId);
+        }
+        blockedUser.set("blockedByUserIds", blockedByUserIds);
+        blockedUser.save(null, { useMasterKey: true }).then(function() {
+            User.get(params.userId).then(function(user) {
+                var blockedUserIds = user.get("blockedUserIds") || [];
+                if (blockedUserIds.indexOf(params.blockedUserId) == -1) {
+                    blockedUserIds.push(params.blockedUserId);
+                }
+                user.set("blockedUserIds", blockedUserIds);
+                user.save().then(response.success, response.error);
+            }, response.error);
+        }, response.error);
+    }, response.error);
+});
 
 
 // Gets the list of ACTIVE Aliases for a given ChatRoom.

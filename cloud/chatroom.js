@@ -8,24 +8,46 @@ function get(chatRoomId) {
     return query.get(chatRoomId);
 }
 
+// Gets the environment that maps to the given registration
+// code. If there are no explicit environments, then the
+// default environment == registrationCode
+function getEnvForRegCode(registrationCode) {
+    // Add custom environment mapping here.
+    var envMap = {}
+    return envMap[registrationCode] || registrationCode;
+}
+
 // Retrieves the next available ChatRoom for the user with the
 // given id. Creates a new ChatRoom if none exist.
 function getNextAvailableChatRoom(user, maxOccupancy) {
     var aliasQuery = new Parse.Query("Alias");
     aliasQuery.equalTo("userId", user.id);
 
-    var query = new Parse.Query("ChatRoom");
+    var blockedAliasQuery = new Parse.Query("Alias");
+    blockedAliasQuery.containedIn("userId", user.get("blockedUserIds") || []);
+    blockedAliasQuery.equalTo("active",true);
 
-    // Don't return ChatRooms that this User already has an Alias for.
-    query.doesNotMatchKeyInQuery("objectId", "chatRoomId", aliasQuery);
+    var blockedByAliasQuery = new Parse.Query("Alias");
+    blockedByAliasQuery.containedIn("userId", user.get("blockedByUserIds") || []);
+    blockedByAliasQuery.equalTo("active",true);
+
+    var blockedAliasSubQuery = Parse.Query.or(blockedAliasQuery, blockedByAliasQuery);
+    var mainAliasQuery = Parse.Query.or(aliasQuery, blockedAliasSubQuery);
+
+    var query = new Parse.Query("ChatRoom");
+    var env = getEnvForRegCode(user.get("registrationCode"));
+
+    // Don't return ChatRooms that this User already has an Alias for, or that the user has blocked
+    query.doesNotMatchKeyInQuery("objectId", "chatRoomId", mainAliasQuery);
     query.equalTo("maxOccupancy", maxOccupancy);
     query.notEqualTo("numOccupants", 0);
     query.lessThan("numOccupants", maxOccupancy);
     query.ascending("numOccupants");
+    query.equalTo("env", env);
 
     return query.first().then(function(chatRoom) {
         if (chatRoom == undefined) {
-            return createChatRoom(maxOccupancy);
+            return createChatRoom(maxOccupancy, env);
         } else {
             return Parse.Promise.as(chatRoom);
         }
@@ -33,12 +55,14 @@ function getNextAvailableChatRoom(user, maxOccupancy) {
 }
 
 // Creates and returns a new ChatRoom.
-function createChatRoom(maxOccupancy) {
+function createChatRoom(maxOccupancy, env) {
     var ChatRoom = Parse.Object.extend("ChatRoom");
     var chatRoom = new ChatRoom();
 
     chatRoom.set("maxOccupancy", maxOccupancy);
     chatRoom.set("numOccupants", 0);
+    chatRoom.set("env", env);
+    chatRoom.set("name", "Group Message");
 
     return chatRoom.save();
 }
@@ -67,7 +91,7 @@ function getAvailableColorId(chatRoom) {
 
             var colorId = aliases[i].get("colorId");
             if (colorId != i) {
-              return Parse.Promise.as(colorId);
+              return Parse.Promise.as(i);
             }
             i++;
         } while(i < chatRoom.get("maxOccupancy"));

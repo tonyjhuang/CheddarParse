@@ -60,14 +60,16 @@ function createPresence(alias, subtype) {
     return presence.save();
 }
 
-function getMostRecentForChatRoom(chatRoomId) {
+function getMostRecentForChatRoom(alias) {
     var aliasQuery = new Parse.Query("Alias");
-    aliasQuery.equalTo("chatRoomId", chatRoomId);
+    aliasQuery.equalTo("chatRoomId", alias.get("chatRoomId"));
 
     var query = new Parse.Query("ChatEvent");
     query.matchesQuery("alias", aliasQuery);
     query.descending("createdAt");
     query.include("alias");
+    query.notContainedIn("objectId", alias.get("deletedChatEventIds") || []);
+
     return query.first();
 }
 
