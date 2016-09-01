@@ -81,6 +81,29 @@ Parse.Cloud.define("sendReportUser", function(request,response) {
 //   "endTimeToken": "00000"}
 
 Parse.Cloud.define("replayEvents", function(request, response) {
+    var requiredParams = ["aliasId", "subkey"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+
+    var count = params.count ? params.count : 9999;
+    var aliasId = params.aliasId;
+    var subkey = params.subkey;
+
+    Alias.get(params.aliasId).then(function(alias) {
+        var chatRoomId = alias.get("chatRoomId");
+        var startTimeToken = params.startTimeToken
+            ? params.startTimeToken
+            : new Date().getTime() * 10000;
+        var endTimeToken = params.endTimeToken;
+
+        Pubnub.replayChannel({subkey: subkey,
+                              channel: chatRoomId,
+                              startTimeToken: startTimeToken,
+                              endTimeToken: endTimeToken,
+                              count: count
+                             }).then(response.success, response.error);
+    }, response.error);
+    /*  NEW LOGIC, WAIT TIL IOS BUILD GOES OUT TO TURN ON
     var requiredParams = ["aliasId"];
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
@@ -125,7 +148,7 @@ Parse.Cloud.define("replayEvents", function(request, response) {
             "endTimeToken": endTimeToken,
             "events": _.map(chatEvents, formatChatEvent)
         }
-    }).then(response.success, response.error);
+    }).then(response.success, response.error); */
 });
 
 // Update a ChatRoom's name.
