@@ -40,7 +40,7 @@ Parse.Cloud.define("checkRegistrationCode", function(request, response) {
                                   "appStoreReview",
                                   "brooklyn",
                                   "internalTesting"]
-                                  
+
     var registrationCode = params.registrationCode
     var isValidCode = validRegistrationCodes.indexOf(registrationCode) >= 0
 
