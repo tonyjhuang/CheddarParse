@@ -97,11 +97,12 @@ Parse.Cloud.define("replayEvents", function(request, response) {
     var endTimeToken = params.endTimeToken ? new Moment(params.endTimeToken).toDate() : undefined;
     var aliasId = params.aliasId;
 
+
     ChatEvent.getChatEvents(aliasId, startTimeToken, count, endTimeToken).then(function(chatEvents) {
-        var startTimeToken = chatEvents.length > 0 ?
-            new Moment(chatEvents[0].get("createdAt")).toISOString() : undefined;
-        var endTimeToken = chatEvents.length > 0 ?
-            new Moment(chatEvents[chatEvents.length - 1].get("createdAt")).toISOString() : undefined;
+        if (chatEvents.length > 0) {
+            var startTimeToken = new Moment(chatEvents[0].get("createdAt")).toISOString();
+            var endTimeToken = chatEvents[chatEvents.length - 1].get("createdAt")).toISOString();
+        }
 
         // For backwards compatibility.
         function formatChatEvent(chatEvent) {
