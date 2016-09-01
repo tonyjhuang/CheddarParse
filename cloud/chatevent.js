@@ -72,6 +72,7 @@ function getMostRecentForChatRoom(chatRoomId) {
 }
 
 function getChatEvents(aliasId, startDate, count, endDate) {
+    // startDate should be later than endDate
     var aliasQuery = new Parse.Query("Alias");
     return aliasQuery.get(aliasId).then(function(alias) {
         var chatRoomId = alias.get("chatRoomId");
@@ -81,12 +82,12 @@ function getChatEvents(aliasId, startDate, count, endDate) {
         var chatEventQuery = new Parse.Query("ChatEvent");
         chatEventQuery.matchesQuery("alias", aliasQuery);
         chatEventQuery.include("alias");
-        chatEventQuery.greaterThan("createdAt", startDate);
+        chatEventQuery.lessThan("createdAt", startDate);
         if (endDate) {
-            chatEventQuery.lessThan("createdAt", endDate);
+            chatEventQuery.greaterThan("createdAt", endDate);
         }
         chatEventQuery.limit(count);
-        chatEventQuery.ascending("createdAt");
+        chatEventQuery.descending("createdAt");
 
         return chatEventQuery.find();
     });

@@ -99,6 +99,7 @@ Parse.Cloud.define("replayEvents", function(request, response) {
 
 
     ChatEvent.getChatEvents(aliasId, startTimeToken, count, endTimeToken).then(function(chatEvents) {
+        chatEvents.reverse(); // Show newest ChatEvent first.
         if (chatEvents.length > 0) {
             var startTimeToken = new Moment(chatEvents[0].get("createdAt")).toISOString();
             var endTimeToken = chatEvents[chatEvents.length - 1].get("createdAt").toISOString();
