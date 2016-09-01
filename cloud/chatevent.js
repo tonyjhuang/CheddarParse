@@ -81,9 +81,9 @@ function getChatEvents(aliasId, startDate, count, endDate) {
         var chatEventQuery = new Parse.Query("ChatEvent");
         chatEventQuery.matchesQuery("alias", aliasQuery);
         chatEventQuery.include("alias");
-        chatEventQuery.lessThan("createdAt", startDate);
+        chatEventQuery.greaterThan("createdAt", startDate);
         if (endDate) {
-            chatEventQuery.greaterThan("createdAt", endDate);
+            chatEventQuery.lessThan("createdAt", endDate);
         }
         chatEventQuery.limit(count);
         chatEventQuery.ascending("createdAt");

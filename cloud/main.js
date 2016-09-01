@@ -101,7 +101,7 @@ Parse.Cloud.define("replayEvents", function(request, response) {
     ChatEvent.getChatEvents(aliasId, startTimeToken, count, endTimeToken).then(function(chatEvents) {
         if (chatEvents.length > 0) {
             var startTimeToken = new Moment(chatEvents[0].get("createdAt")).toISOString();
-            var endTimeToken = chatEvents[chatEvents.length - 1].get("createdAt")).toISOString();
+            var endTimeToken = chatEvents[chatEvents.length - 1].get("createdAt").toISOString();
         }
 
         // For backwards compatibility.
@@ -318,7 +318,6 @@ Parse.Cloud.define("joinNextAvailableChatRoom", function(request, response) {
             return Alias.create(userId, chatRoom.id, colorId).then(function(alias) {
                 // Update num occupants after creating Alias.
                 return updateChatRoomOccupants(chatRoom.id).then(function(chatRoom) {
-                    console.log(chatRoom);
                     return Parse.Promise.as(alias);
                 });
             });
