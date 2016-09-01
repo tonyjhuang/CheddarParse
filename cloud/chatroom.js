@@ -19,7 +19,7 @@ function getEnvForRegCode(registrationCode) {
 
 // Retrieves the next available ChatRoom for the user with the
 // given id. Creates a new ChatRoom if none exist.
-function getNextAvailableChatRoom(user, maxOccupancy) {
+function getNextAvailableChatRoom(user, maxOccupancy, topic) {
     var aliasQuery = new Parse.Query("Alias");
     aliasQuery.equalTo("userId", user.id);
 
@@ -36,6 +36,9 @@ function getNextAvailableChatRoom(user, maxOccupancy) {
 
     var query = new Parse.Query("ChatRoom");
     var env = getEnvForRegCode(user.get("registrationCode"));
+    if (topic) {
+        env += '__' + topic;
+    }
 
     // Don't return ChatRooms that this User already has an Alias for, or that the user has blocked
     query.doesNotMatchKeyInQuery("objectId", "chatRoomId", mainAliasQuery);

@@ -307,6 +307,7 @@ Parse.Cloud.define("getNextAvailableChatRoom", function(request, response) {
 // Adds a User to a ChatRoom by creating a new active Alias and
 // fires a pubnub presence event.
 // Takes: {userId: string, maxOccupancy: int, subkey: string, pubkey: string}
+// Optional params: topic
 // Returns: Alias
 Parse.Cloud.define("joinNextAvailableChatRoom", function(request, response) {
     var requiredParams = ["userId", "maxOccupancy", "pubkey", "subkey"];
@@ -317,9 +318,10 @@ Parse.Cloud.define("joinNextAvailableChatRoom", function(request, response) {
     var maxOccupancy = params.maxOccupancy;
     var pubkey = params.pubkey;
     var subkey = params.subkey;
+    var topic = params.topic
 
     User.get(userId).then(function(user) {
-        return ChatRoom.getNextAvailableChatRoom(user, maxOccupancy);
+        return ChatRoom.getNextAvailableChatRoom(user, maxOccupancy, topic);
 
     }).then(function(chatRoom) {
         return ChatRoom.getAvailableColorId(chatRoom).then(function(colorId) {
