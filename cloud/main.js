@@ -8,6 +8,8 @@
 */
 
 var _ = require('cloud/utils/underscore.js');
+var Moment = require('cloud/utils/moment.js');
+
 var Alias = require('cloud/alias.js');
 var ChatEvent = require('cloud/chatevent.js');
 var ChatRoom = require('cloud/chatroom.js');
@@ -79,28 +81,38 @@ Parse.Cloud.define("sendReportUser", function(request,response) {
 //   "endTimeToken": "00000"}
 
 Parse.Cloud.define("replayEvents", function(request, response) {
-    var requiredParams = ["aliasId", "subkey"];
+    var requiredParams = ["aliasId"];
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
 
-    var count = params.count ? params.count : 9999;
-    var aliasId = params.aliasId;
+    var count = params.count || 20;
     var subkey = params.subkey;
+    var startTimeToken = params.startTimeToken ?
+        new Moment(params.startTimeToken).toDate() : new Moment().toDate();
+    var endTimeToken = params.endTimeToken ? new Moment(params.endTimeToken).toDate() : undefined;
+    var aliasId = params.aliasId;
 
-    Alias.get(params.aliasId).then(function(alias) {
-        var chatRoomId = alias.get("chatRoomId");
-        var startTimeToken = params.startTimeToken
-            ? params.startTimeToken
-            : new Date().getTime() * 10000;
-        var endTimeToken = params.endTimeToken;
 
-        Pubnub.replayChannel({subkey: subkey,
-                              channel: chatRoomId,
-                              startTimeToken: startTimeToken,
-                              endTimeToken: endTimeToken,
-                              count: count
-                             }).then(response.success, response.error);
-    }, response.error);
+    ChatEvent.getChatEvents(aliasId, startTimeToken, count, endTimeToken).then(function(chatEvents) {
+        if (chatEvents.length > 0) {
+            var startTimeToken = new Moment(chatEvents[0].get("createdAt")).toISOString();
+            var endTimeToken = chatEvents[chatEvents.length - 1].get("createdAt")).toISOString();
+        }
+
+        // For backwards compatibility.
+        function formatChatEvent(chatEvent) {
+            return {
+                "object": chatEvent,
+                "objectType": "ChatEvent"
+            }
+        }
+
+        return {
+            "startTimeToken": startTimeToken,
+            "endTimeToken": endTimeToken,
+            "events": _.map(chatEvents, formatChatEvent)
+        }
+    }).then(response.success, response.error);
 });
 
 // Update a ChatRoom's name.
