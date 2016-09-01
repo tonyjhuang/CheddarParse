@@ -40,7 +40,7 @@ Parse.Cloud.define("checkRegistrationCode", function(request, response) {
                                   "appStoreReview",
                                   "brooklyn",
                                   "internalTesting"]
-                                  
+
     var registrationCode = params.registrationCode
     var isValidCode = validRegistrationCodes.indexOf(registrationCode) >= 0
 
@@ -96,7 +96,7 @@ Parse.Cloud.define("replayEvents", function(request, response) {
     ChatEvent.getChatEvents(aliasId, startTimeToken, count, endTimeToken).then(function(chatEvents) {
         if (chatEvents.length > 0) {
             var startTimeToken = new Moment(chatEvents[0].get("createdAt")).toISOString();
-            var endTimeToken = chatEvents[chatEvents.length - 1].get("createdAt")).toISOString();
+            var endTimeToken = chatEvents[chatEvents.length - 1].get("createdAt").toISOString();
         }
 
         // For backwards compatibility.
