@@ -3,6 +3,7 @@ var PubNub = require('cloud/utils/pubnub_lib');
 module.exports.sendMessage = sendMessage;
 module.exports.sendPresence = sendPresence;
 module.exports.sendChangeRoomName = sendChangeRoomName;
+module.exports.replayChannel = replayChannel;
 
 var TYPE = {
     MESSAGE: {
@@ -88,6 +89,33 @@ function publish(pubkey, subkey, channel, payload) {
         message: payload,
         callback: function(result) {
             promise.resolve(result);
+        },
+        error: function(result) {
+            promise.reject(result);
+        }
+    });
+
+    return promise;
+}
+
+// Replays events from a given pubnub channel.
+// Takes: {subkey, channel, startTimeToken, endTimeToken, count}
+function replayChannel(params) {
+    var pubnub = PubNub({
+        subscribe_key: params.subkey
+    });
+
+    var promise = new Parse.Promise();
+
+    pubnub.history({
+        channel: params.channel,
+        count: params.count,
+        start: params.startTimeToken,
+        end: params.endTimeToken,
+        callback: function(result) {
+            promise.resolve({"events":result[0],
+                             "startTimeToken":result[1],
+                             "endTimeToken":result[2]});
         },
         error: function(result) {
             promise.reject(result);
