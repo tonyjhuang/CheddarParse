@@ -8,6 +8,8 @@
 */
 
 var _ = require('cloud/utils/underscore.js');
+var Moment = require('cloud/utils/moment.js');
+
 var Alias = require('cloud/alias.js');
 var ChatEvent = require('cloud/chatevent.js');
 var ChatRoom = require('cloud/chatroom.js');
@@ -17,16 +19,16 @@ var User = require('cloud/user.js');
 var UserCount = require('cloud/usercount.js');
 
 
-// Use Parse.Cloud.define to define as many cloud functions as you want.
-// For example:
-Parse.Cloud.define("hello", function(request, response) {
-    response.success(Alias.generateName());
-});
-
 // Return minimum ios build number
 // used to force upgrades
 Parse.Cloud.define("minimumIosBuildNumber", function(request, response) {
     response.success(43);
+});
+
+// Return minimum android build number
+// used to force upgrades
+Parse.Cloud.define("minimumAndroidBuildNumber", function(request, response) {
+    response.success(9);
 });
 
 Parse.Cloud.define("checkRegistrationCode", function(request, response) {
@@ -38,7 +40,7 @@ Parse.Cloud.define("checkRegistrationCode", function(request, response) {
                                   "appStoreReview",
                                   "brooklyn",
                                   "internalTesting"]
-                                  
+
     var registrationCode = params.registrationCode
     var isValidCode = validRegistrationCodes.indexOf(registrationCode) >= 0
 
@@ -78,6 +80,8 @@ Parse.Cloud.define("sendReportUser", function(request,response) {
 //   "startTimeToken": "00000",
 //   "endTimeToken": "00000"}
 
+// Method is used on ios version 0.2.1 and below (< build 45)
+
 Parse.Cloud.define("replayEvents", function(request, response) {
     var requiredParams = ["aliasId", "subkey"];
     var params = request.params;
@@ -101,6 +105,63 @@ Parse.Cloud.define("replayEvents", function(request, response) {
                               count: count
                              }).then(response.success, response.error);
     }, response.error);
+});
+
+
+// Replays events in a channel for an alias
+// Optional params: startTimeToken, endTimeToken
+// Response Payload:
+// {"events":[{event}, {event}],
+//   "startTimeToken": "00000",
+//   "endTimeToken": "00000"}
+
+// Method is used on ios version 0.2.2 and after (>= build 45)
+Parse.Cloud.define("replayParseEvents", function(request, response) {
+    var requiredParams = ["aliasId"];
+    var params = request.params;
+    checkMissingParams(params, requiredParams, response);
+
+    var count = params.count || 20;
+    var aliasId = params.aliasId;
+
+    function formatTimeToken(timeToken) {
+        var len = timeToken.length
+        return new Moment(+timeToken.slice(0, len-4)).toDate();
+    }
+
+    if (params.startTimeToken != undefined) {
+        var startTimeToken = formatTimeToken(params.startTimeToken);
+    } else {
+        var startTimeToken = new Moment().toDate();
+    }
+    if (params.endTimeToken != undefined) {
+        var endTimeToken = formatTimeToken(params.endTimeToken);
+    }
+
+    ChatEvent.getChatEvents(aliasId, startTimeToken, count, endTimeToken).then(function(chatEvents) {
+        chatEvents.reverse(); // Show newest ChatEvent first.
+        if (chatEvents.length > 0) {
+            // Pretty awful hack but pubnub sends out timestamps in nanoseconds for some reason.
+            var startTimeToken = new Moment(
+                chatEvents[0].get("createdAt")).valueOf() * 10000;
+            var endTimeToken = new Moment(
+                chatEvents[chatEvents.length - 1].get("createdAt")).valueOf() * 10000;
+        }
+
+        // For backwards compatibility.
+        function formatChatEvent(chatEvent) {
+            return {
+                "object": chatEvent,
+                "objectType": "ChatEvent"
+            }
+        }
+
+        return {
+            "startTimeToken": startTimeToken,
+            "endTimeToken": endTimeToken,
+            "events": _.map(chatEvents, formatChatEvent)
+        }
+    }).then(response.success, response.error); 
 });
 
 // Update a ChatRoom's name.
@@ -301,7 +362,6 @@ Parse.Cloud.define("joinNextAvailableChatRoom", function(request, response) {
             return Alias.create(userId, chatRoom.id, colorId).then(function(alias) {
                 // Update num occupants after creating Alias.
                 return updateChatRoomOccupants(chatRoom.id).then(function(chatRoom) {
-                    console.log(chatRoom);
                     return Parse.Promise.as(alias);
                 });
             });

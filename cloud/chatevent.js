@@ -3,6 +3,7 @@ module.exports.createJoinPresence = createJoinPresence;
 module.exports.createLeavePresence = createLeavePresence;
 module.exports.createChangeRoomName = createChangeRoomName;
 module.exports.getMostRecentForChatRoom = getMostRecentForChatRoom;
+module.exports.getChatEvents = getChatEvents;
 
 
 const TYPE = {
@@ -70,4 +71,26 @@ function getMostRecentForChatRoom(alias) {
     query.notContainedIn("objectId", alias.get("deletedChatEventIds") || []);
 
     return query.first();
+}
+
+function getChatEvents(aliasId, startDate, count, endDate) {
+    // startDate should be later than endDate
+    var aliasQuery = new Parse.Query("Alias");
+    return aliasQuery.get(aliasId).then(function(alias) {
+        var chatRoomId = alias.get("chatRoomId");
+        aliasQuery = new Parse.Query("Alias");
+        aliasQuery.equalTo("chatRoomId", chatRoomId);
+
+        var chatEventQuery = new Parse.Query("ChatEvent");
+        chatEventQuery.matchesQuery("alias", aliasQuery);
+        chatEventQuery.include("alias");
+        chatEventQuery.lessThan("createdAt", startDate);
+        if (endDate) {
+            chatEventQuery.greaterThan("createdAt", endDate);
+        }
+        chatEventQuery.limit(count);
+        chatEventQuery.descending("createdAt");
+
+        return chatEventQuery.find();
+    });
 }
