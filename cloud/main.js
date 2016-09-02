@@ -80,6 +80,8 @@ Parse.Cloud.define("sendReportUser", function(request,response) {
 //   "startTimeToken": "00000",
 //   "endTimeToken": "00000"}
 
+// Method is used on ios version 0.2.1 and below (< build 45)
+
 Parse.Cloud.define("replayEvents", function(request, response) {
     var requiredParams = ["aliasId", "subkey"];
     var params = request.params;
@@ -103,7 +105,18 @@ Parse.Cloud.define("replayEvents", function(request, response) {
                               count: count
                              }).then(response.success, response.error);
     }, response.error);
-    /*  NEW LOGIC, WAIT TIL IOS BUILD GOES OUT TO TURN ON
+});
+
+
+// Replays events in a channel for an alias
+// Optional params: startTimeToken, endTimeToken
+// Response Payload:
+// {"events":[{event}, {event}],
+//   "startTimeToken": "00000",
+//   "endTimeToken": "00000"}
+
+// Method is used on ios version 0.2.2 and after (>= build 45)
+Parse.Cloud.define("replayParseEvents", function(request, response) {
     var requiredParams = ["aliasId"];
     var params = request.params;
     checkMissingParams(params, requiredParams, response);
@@ -148,7 +161,7 @@ Parse.Cloud.define("replayEvents", function(request, response) {
             "endTimeToken": endTimeToken,
             "events": _.map(chatEvents, formatChatEvent)
         }
-    }).then(response.success, response.error); */
+    }).then(response.success, response.error); 
 });
 
 // Update a ChatRoom's name.
