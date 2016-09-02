@@ -80,6 +80,8 @@ Parse.Cloud.define("sendReportUser", function(request,response) {
 //   "startTimeToken": "00000",
 //   "endTimeToken": "00000"}
 
+// Method is used on ios version 0.2.1 and below (< build 45)
+
 Parse.Cloud.define("replayEvents", function(request, response) {
     var requiredParams = ["aliasId", "subkey"];
     var params = request.params;
@@ -105,6 +107,15 @@ Parse.Cloud.define("replayEvents", function(request, response) {
     }, response.error);
 });
 
+
+// Replays events in a channel for an alias
+// Optional params: startTimeToken, endTimeToken
+// Response Payload:
+// {"events":[{event}, {event}],
+//   "startTimeToken": "00000",
+//   "endTimeToken": "00000"}
+
+// Method is used on ios version 0.2.2 and after (>= build 45)
 Parse.Cloud.define("replayParseEvents", function(request, response) {
     var requiredParams = ["aliasId"];
     var params = request.params;
